@@ -19,6 +19,7 @@ const port = settings.port || 5000;
 const controlKey = process.env.CONTROL_PASSWORD;
 const ngrokAuth = process.env.NGROK_AUTHTOKEN;
 const ngrokHost = process.env.NGROK_HOSTNAME;
+const tunnelAuth = process.env.NGROK_TUNNEL_AUTH;
 
 
 // timer management vars
@@ -317,7 +318,7 @@ server.listen(port, async () => {
     const url = await ngrok.connect({
         addr: port,
         authtoken: ngrokAuth,
-        basic_auth: "kivi:shingo123",
+        basic_auth: tunnelAuth,
         region: 'eu',
         hostname: ngrokHost
     });

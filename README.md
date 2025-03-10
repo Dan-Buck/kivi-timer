@@ -33,9 +33,16 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 3. Create a `.env` file in the project root with the following variables:
    ```env
    NGROK_AUTHTOKEN=your-ngrok-auth-token
-   NGROK_HOSTNAME=your-custom-ngrok-subdomain.ngrok-free.app
-   CONTROL_PASSWORD=your-chosen-control-password
+   NGROK_HOSTNAME="your-custom-ngrok-subdomain.ngrok-free.app"
+   CONTROL_PASSWORD="your-chosen-control-password"
    ```
+
+   and optionally add authentication to the URL tunnel:
+    ```env
+    NGROK_TUNNEL_AUTH="username:password"
+    ```
+    [Setting up and configuring a free ngrok account](https://ngrok.com/)
+
 
 4. Start the server:
    ```sh
@@ -49,15 +56,17 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 - The **transit area** screen can be accessed at `/transit`.
 
 ### Operational Workflow
-- From the control screen enter your round settings
+- From the control screen enter your round settings.
 - Then upload 1 or 2 athlete .csv files without column headers, formatted as below (via Save As .CSV):
+    ```
     Athlete ID 1,Athlete Name 1 
     Athlete ID 2,Athlete Name 2 
-    Athlete ID 3,Athlete Name 3 
-- Finally hit "Reset" which will queue the athletes and timers for all screens
-- Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the round timer
-- It is good practice to click "Clear Athete Data" between rounds if not restarting the server
-- Use the "Place Athlete" feature only if needed to resume a round that was interrupted by server outage
+    Athlete ID 3,Athlete Name 3
+    ```
+- Finally hit "Reset" which will queue the athletes and timers for all screens.
+- Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the round timer.
+- It is good practice to click "Clear Athete Data" between rounds if not restarting the server.
+- Use the "Place Athlete" feature only if needed to resume a round that was interrupted by server outage.
 
 
 ## Ngrok Setup
