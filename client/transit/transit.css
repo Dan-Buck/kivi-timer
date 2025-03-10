@@ -1,0 +1,128 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Body Styling */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 100vh;
+    background-color: #1e1e2f;
+    color: white;
+    padding: 20px;
+}
+
+/* Header Container: Timer + Message */
+.header-container {
+    display: flex;
+    width: 100%;
+    height: 25vh;
+    gap: 20px;
+}
+
+/* Timer Container (25% Width) */
+.timer-container {
+    flex: 0 0 25%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #292942;
+    padding: 40px;
+    border-radius: 8px;
+    font-size: 4rem;
+    /* Bigger text */
+    font-weight: bold;
+    text-align: center;
+    height: 100%;
+    /* Fill the height of the header container */
+}
+
+/* Message Container (Fixed Size) */
+.message-container {
+    flex: 1;
+    width: 75vw;
+    /* Fixed width: 75% of the viewport width */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #444466;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 7rem;
+    /* Bigger text */
+    overflow: hidden;
+    /* Prevents growing due to text */
+    white-space: nowrap;
+    /* Prevents wrapping */
+}
+
+
+/* Ondeck/Boulders Container */
+.ondeck-boulders {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    /* Bigger boulder cards */
+    gap: 20px;
+    width: 100%;
+    height: auto;
+    /* Takes up most of the remaining space */
+    padding: 20px;
+}
+
+/* Each Boulder Entry */
+.ondeck-entry {
+    background-color: #333355;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 2.5rem;
+    /* Bigger text */
+    font-weight: bold;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    /* Stack text in a column */
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    height: 100%;
+
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .timer-container {
+        flex: none;
+        width: 100%;
+        height: 20vh;
+    }
+
+    .message-container {
+        width: 100%;
+        height: 20vh;
+    }
+
+    .ondeck-container {
+        height: auto;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .ondeck-entry {
+        font-size: 1.5rem;
+    }
+}

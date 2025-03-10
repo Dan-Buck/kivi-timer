@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shingo's Master Control</title>
+    <link rel="stylesheet" href="./control.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+    <!-- Timer Display -->
+    <div class="timer-container">
+        <div class="timer">00:00</div>
+    </div>
+
+    <div class="settings-container">
+        <button id="start-timer">Start/Resume</button>
+        <button id="pause-timer">Pause</button>
+    </div>
+
+    <hr style="width: 100%; border: 2px solid white; margin: 20px 0;">
+
+    <!-- Control Panel -->
+    <div id="controls" class="settings-container">
+        <button id="reset-timer">Reset Round</button>
+
+        <div class="round-settings-container">
+            <div class="timer-mode">
+                <label for="timer-select">Timer Mode:</label>
+                <select id="timer-select">
+                    <option value="300">5 min</option>
+                    <option value="240">4 min</option>
+                    <option value="120">2 min (obs)</option>
+                    <option value="custom">Custom</option>
+                </select>
+
+                <!-- Custom Time Input (hidden by default) -->
+                <input type="number" id="custom-time" min="1" placeholder="Enter time (sec)" style="display: none;" />
+            </div>
+
+            <div class="boulders">
+                <label for="boulder-select"># Boulders:</label>
+                <select id="boulder-select">
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="custom">Custom</option>
+                </select>
+
+                <!-- Custom Time Input (hidden by default) -->
+                <input type="number" id="custom-boulders" min="1" placeholder="Enter # boulders"
+                    style="display: none;" />
+            </div>
+
+            <div class="zones">
+                <label for="zone-select"># Zones:</label>
+                <select id="zone-select">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+
+            <div class="finals-mode">
+                <label for="finals-mode-select">Finals Mode:</label>
+                <select id="finals-mode-select">
+                    <option value="false">Off</option>
+                    <option value="true">On</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="uploads-container">
+            <div class="upload-group">
+                <input type="file" id="csv-upload-1" accept=".csv" />
+                <label for="athlete-category-select-1">Category:</label>
+                <select id="athlete-category-select-1">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="combined">Combined</option>
+                </select>
+                <button id="upload-btn-1" class="upload-button">Upload CSV 1</button>
+            </div>
+
+            <div class="upload-group">
+                <input type="file" id="csv-upload-2" accept=".csv" />
+                <label for="athlete-category-select-2">Category:</label>
+                <select id="athlete-category-select-2">
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="combined">Combined</option>
+                </select>
+                <button id="upload-btn-2" class="upload-button">Upload CSV 2</button>
+            </div>
+
+        </div>
+
+        <div class="extra-buttons">
+            <button id="upload-delete" class="delete-button">Clear Athlete Data</button>
+            <button id="open-modal-btn" class="roundstate-button">Change Round State</button>
+        </div>
+
+
+        <!-- Modal Structure -->
+        <div id="round-state-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Place Athlete</h2>
+                <form id="round-state-form">
+                    <label for="athlete-id">Athlete ID:</label>
+                    <input type="number" id="athlete-id" required />
+
+                    <label for="boulder-number"><br> Boulder:</label>
+                    <input type="number" id="boulder-number" required />
+                    <br>
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="control.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+</body>
+
+</html>
