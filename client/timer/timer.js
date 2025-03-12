@@ -22,7 +22,7 @@ function startSockets(link) {
             if (betweenRounds) {
                 timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
                 timerElement.style.fontSize = "50vh";
-                timerElement.style.color = "fuchsia";
+                timerElement.style.color = "gray";
                 timerElement.style.fontWeight = 600;
 
             } else {
@@ -33,10 +33,10 @@ function startSockets(link) {
 
             }
         }
-        if ((time <= 3 && time > 0) || time === 60) {
-            playSound("/misc/sounds/beep.mp3");
+        if ((time <= 5 && time > 0) || time === 60) {
+            playSound("/misc/sounds/beep.mp4");
         } else if (data.remainingTime === 0) {
-            playSound("/misc/sounds/boop.mp3");
+            playSound("/misc/sounds/boop.mp4");
         }
     });
 
