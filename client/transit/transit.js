@@ -110,7 +110,15 @@ function updateBoulders(count) {
 fetch("/connections")
     .then((response) => response.json())
     .then((data) => {
-        const link = data.ngrokUrl ? data.ngrokUrl.replace("https://", "wss://") : `http://localhost:${data.port}`;
+        const isLocalhost = window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1" ||
+            window.location.hostname === "::1";
+        let link;
+        if (!data.ngrokUrl || isLocalhost) {
+            link = `http://localhost:${data.port}`;
+        } else {
+            link = data.ngrokUrl.replace("https://", "wss://");
+        }
         console.log(`transit page starting sockets at: ${link}`);
         startSockets(link);
     });

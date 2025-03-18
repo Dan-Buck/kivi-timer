@@ -4,10 +4,16 @@ let socket;
 fetch("/connections")
     .then((response) => response.json())
     .then((data) => {
-        const { ngrokUrl, port } = data;
-        console.log(`data: ${JSON.stringify(data)}`);
-        let link = ngrokUrl ? ngrokUrl.replace("https://", "wss://") : `http://localhost:${port}`;
+        let link
+        const isLocalhost = window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1" ||
+            window.location.hostname === "::1";
 
+        if (!data.ngrokUrl || isLocalhost) {
+            link = `http://localhost:${data.port}`;
+        } else {
+            link = data.ngrokUrl.replace("https://", "wss://");
+        }
         startSockets(link).then(() => {
             addEventListeners();
         })

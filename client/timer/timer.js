@@ -99,7 +99,11 @@ fetch("/connections")
     .then((data) => {
         const { ngrokUrl, port } = data;
         let link;
-        if (!ngrokUrl) {
+        const isLocalhost = window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1" ||
+            window.location.hostname === "::1";
+
+        if (!ngrokUrl || isLocalhost) {
             link = `http://localhost:${port}`;
         } else {
             link = ngrokUrl.replace("https://", "wss://"); // Ensure WebSocket uses wss://
