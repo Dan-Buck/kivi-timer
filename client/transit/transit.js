@@ -79,10 +79,9 @@ function updateOndeck(ondeck) {
 
         categoryContainer.innerHTML = ""; // Clear existing content
         ondeck[category].forEach(({ boulder, athlete }) => {
-            console.log(`creating boulder card: ${boulder}`);
             const entry = document.createElement("div");
             entry.classList.add("ondeck-entry");
-            entry.innerHTML = `<u>Boulder ${boulder}</u><br>${athlete ? athlete.name : "-"}`;
+            entry.innerHTML = `<u>Boulder ${boulder}</u><br>${athlete ? `${athlete.id}<br>${athlete.lastName}` : "-"}`;
             categoryContainer.appendChild(entry);
         });
     }

@@ -52,6 +52,8 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 ## Usage
 - The app will start at `http://localhost:5000`unless otherwise specified.  
 - The NGROK tunnel URL is displayed in the console when the server starts. Share this with other clients and users who need access without localhost. 
+
+### Endpoints
 - The **fullscreen timer** is the homepage `/`. You must interact with the page for sounds to play. Click the timer to open the controls.
 - Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the preset key. No sound on this page.
 - The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder.
@@ -62,9 +64,9 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
    - Turn on Finals Mode if only one athlete (per gender) will be climbing at a time.
 - Then upload 1 or 2 athlete .csv files without column headers, formatted as below (via Save As .CSV):
     ```
-    Athlete ID 1,Athlete Name 1 
-    Athlete ID 2,Athlete Name 2 
-    Athlete ID 3,Athlete Name 3
+    Athlete ID 1,First Name 1,Last Name 1 
+    Athlete ID 2,First Name 2,Last Name 2 
+    Athlete ID 3,First Name 3,Last Name 3
     ```
    Remember to specify gender for each upload.
 - Finally hit "Reset" which will queue the athletes and timers for all screens.

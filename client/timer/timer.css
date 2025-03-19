@@ -4,28 +4,37 @@ body {
     /* Prevents scroll bars from appearing */
 }
 
+.timer {
+    font-size: 70vh;
+    font-weight: 700;
+    text-align: center;
+    color: black;
+    font-family: "Source Sans Pro", sans-serif;
+    line-height: 1;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
 .timer-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    /* Full screen height */
+    width: 100vw;
+    /* Ensure it spans full width */
+    overflow: hidden;
 }
 
-.timer {
-    font-size: 70vh;
-    /* Huge text */
-    font-weight: 700;
-    /* Extra bold */
-    text-align: center;
-    color: black;
-    font-family: "Source Sans Pro", sans-serif;
-    /* Apply the font */
-    line-height: 1;
-    /* No extra spacing */
-    white-space: nowrap;
-    /* Prevents wrapping */
+@media (max-aspect-ratio: 1/1) {
+    .timer {
+        font-size: 20vw;
+        /* Adjust for portrait mode */
+    }
 }
+
 
 .timer-overlay {
     position: absolute;

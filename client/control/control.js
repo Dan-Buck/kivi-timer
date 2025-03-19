@@ -139,10 +139,12 @@ function addEventListeners() {
                         athletes: parsedData
                     })
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Server response:", data);
-                        alert("Upload successful!");
+                    .then(response => {
+                        if (!response.ok) {
+                            alert("Upload not successful, please try again.");
+                        } else {
+                            alert("Upload successful!");
+                        }
                     })
                     .catch(error => {
                         console.error("Error sending athlete data:", error);
@@ -221,6 +223,7 @@ function csvToJson(csv) {
 
     return rows.map(row => ({
         id: row[0].trim(),
-        name: row[1].trim()
+        firstName: row[1].trim(),
+        lastName: row[2].trim()
     }));
 }

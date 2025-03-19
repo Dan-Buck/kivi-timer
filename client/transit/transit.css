@@ -29,6 +29,7 @@ body {
 /* Timer Container (25% Width) */
 .timer-container {
     flex: 0 0 25%;
+    width: 20vw;
     display: flex;
     justify-content: center;
     align-items: center;

@@ -109,7 +109,7 @@ app.post("/athletes", (req, res) => {
 
     const { athletes: receivedAthletes, category: receivedCategory } = req.body; // Expecting { athletes: [...] }
 
-    if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.name)) {
+    if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.firstName && a.lastName)) {
         return res.status(400).json({ error: "Invalid athlete data format" });
     }
 
