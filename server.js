@@ -164,9 +164,15 @@ io.on("connection", (socket) => {
         turnoverInterval = null;
     });
 
+    socket.on("zero-timer", () => {
+        console.log("next climber: timer paused, round advanced");
+        reset();
+    })
+
     socket.on("reset-timer", () => {
         console.log("round reset");
         reset();
+        roundState = 0;
         // populate transit area boulder list
         for (const category in athletes) {
             if (athletes[category].length > 0) {
@@ -201,6 +207,7 @@ io.on("connection", (socket) => {
     socket.on("change-round-state", (data) => {
         console.log(`round state change: athlete# ${data.athleteID} placed on boulder# ${data.boulder}`);
         reset();
+        roundState = 0;
         selectRoundState(data);
     });
 
@@ -210,7 +217,6 @@ function reset() {
     remainingTime = roundSettings.timerMode;
     betweenRounds = false;
     roundStarted = false;
-    roundState = 0;
     clearInterval(timerInterval);
     clearInterval(turnoverInterval);
     io.emit("timer-update", { remainingTime });

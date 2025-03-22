@@ -49,6 +49,10 @@ function addEventListeners() {
         socket.emit("pause-timer");
     });
 
+    document.getElementById("zero-timer").addEventListener("click", () => {
+        socket.emit("zero-timer");
+    });
+
     document.getElementById("reset-timer").addEventListener("click", () => {
         // Ask for user confirmation
         const isConfirmed = window.confirm("Are you sure you want to reset the round?");

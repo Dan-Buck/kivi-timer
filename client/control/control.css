@@ -65,6 +65,11 @@ button {
     color: #1e1e2f;
 }
 
+#zero-timer {
+    background-color: aqua;
+    color: #1e1e2f;
+}
+
 #reset-timer {
     background-color: #dc3545;
     color: white;
