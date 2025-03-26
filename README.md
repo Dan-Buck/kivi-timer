@@ -71,6 +71,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
    Remember to specify gender for each upload.
 - Finally hit "Reset" which will queue the athletes and timers for all screens.
 - Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the round timer.
+- The "Next Climber" button is for indefinite-length rounds such as finals. Click it when a climber finished to reset the timer and advance the round.
 - It is good practice to click "Clear Athete Data" between rounds if not restarting the server.
 - Use the "Place Athlete" feature only if needed to resume a round that was interrupted by server outage.
 

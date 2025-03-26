@@ -36,7 +36,7 @@ function startSockets(link) {
         if (time === 5) {
             playSound("/misc/sounds/5beeps-boop.mp3");
         } else if (time === 60) {
-            playSound("/misc/sounds/beep.mp4");
+            playSound("/misc/sounds/beep.mp3");
         }
     });
 

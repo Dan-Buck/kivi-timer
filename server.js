@@ -171,8 +171,8 @@ io.on("connection", (socket) => {
 
     socket.on("reset-timer", () => {
         console.log("round reset");
-        reset();
         roundState = 0;
+        reset();
         // populate transit area boulder list
         for (const category in athletes) {
             if (athletes[category].length > 0) {
