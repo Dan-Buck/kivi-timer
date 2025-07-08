@@ -51,13 +51,14 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 
 ## Usage
 - The app will start at `http://localhost:5000`unless otherwise specified.  
-- The NGROK tunnel URL is displayed in the console when the server starts. Share this with other clients and users who need access without localhost. 
+- The NGROK tunnel URL is displayed in the console when the server starts (or via the /connections endpoint). Share this with other clients and users who need access without localhost. 
 
 ### Endpoints
 - The **fullscreen timer** is the homepage `/`. You must interact with the page for sounds to play. Click the timer to open the controls.
 - Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the preset key. No sound on this page.
 - The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder.
 - View the uploaded **athlete data** at `/athletes`. This page is for verification and not user-facing (yet).
+- The **addresses** for the NGROK URL and localhost port are available at `/connections`, returning: json({ ngrokUrl, port })
 
 ### Operational Workflow
 - From the control screen enter your round settings.
