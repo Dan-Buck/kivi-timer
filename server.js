@@ -43,6 +43,13 @@ let athletes = {
     "combined": [],
 }
 
+// group name tracker
+let groups = {
+    "male": "",
+    "female": "",
+    "combined": "",
+}
+
 
 // Setup session middleware
 app.use(
@@ -104,10 +111,15 @@ app.post("/athletes", (req, res) => {
             "female": [],
             "combined": []
         };
+        groups = {
+            "male": "",
+            "female": "",
+            "combined": "",
+        }
         return res.status(200).json({ message: "Athlete data cleared" });
     }
 
-    const { athletes: receivedAthletes, category: receivedCategory } = req.body; // Expecting { athletes: [...] }
+    const { athletes: receivedAthletes, category: receivedCategory, groupName: receivedGroupName } = req.body; // Expecting { athletes: [...] }
 
     if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.firstName && a.lastName)) {
         return res.status(400).json({ error: "Invalid athlete data format" });
@@ -118,8 +130,9 @@ app.post("/athletes", (req, res) => {
     }
 
     athletes[receivedCategory] = receivedAthletes; // Overwrite existing data
+    groups[receivedCategory] = receivedGroupName; // store group name by category
     res.status(200).json({ message: "Athlete data stored successfully" });
-    console.log("athlete list received");
+    console.log("athlete list received: " + receivedGroupName);
 });
 
 app.get("/athletes", (req, res) => {
@@ -255,7 +268,8 @@ function runTurnoverTimer() {
         } else {
             clearInterval(turnoverInterval)
             betweenRounds = false;
-            io.emit("round-begin");
+            io.emit("round-begin", { groupName: groups, roundState: roundState });
+            console.log("round " + roundState + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
             io.emit("timer-update", { remainingTime: roundSettings.timerMode });
             advanceRoundState();
             remainingTime = roundSettings.timerMode;

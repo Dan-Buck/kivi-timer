@@ -120,27 +120,40 @@ function addEventListeners() {
         const fileInput = group.querySelector("input[type='file']");
         const categorySelect = group.querySelector("select");
         const uploadBtn = group.querySelector(".upload-button");
+        const groupName = group.querySelector("input[type='text']");
 
         uploadBtn.addEventListener("click", () => {
             if (fileInput.files.length === 0) {
                 alert("Please select a CSV file.");
                 return;
             }
+            if (!groupName.value.trim || groupName.value === "") {
+                alert("Please enter a group name");
+                return;
+            }
+            console.log("group name: " + groupName.value)
 
             const file = fileInput.files[0];
             const reader = new FileReader();
 
             reader.onload = function (event) {
                 const csvData = event.target.result;
-                const parsedData = csvToJson(csvData);
+                let parsedData
+                try {
+                    parsedData = csvToJson(csvData);
+                } catch (err) {
+                    csvError(err)
+                }
                 const selectedCategory = categorySelect.value;
+                const groupNameText = groupName.value;
 
                 fetch("/athletes", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         category: selectedCategory,
-                        athletes: parsedData
+                        athletes: parsedData,
+                        groupName: groupNameText
                     })
                 })
                     .then(response => {
@@ -230,4 +243,14 @@ function csvToJson(csv) {
         firstName: row[1].trim(),
         lastName: row[2].trim()
     }));
+}
+
+function csvError(err) {
+    console.error("CSV parsing error:", err);
+    alert("Please properly format the CSV file: \n"
+        + "Athlete ID 1,First Name 1,Last Name 1\n"
+        + "Athlete ID 2,First Name 2,Last Name 2\n"
+        + "..."
+    )
+    return;
 }

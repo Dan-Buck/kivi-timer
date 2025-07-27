@@ -112,6 +112,15 @@ input[type="number"] {
     font-size: 1rem;
 }
 
+input[type="text"] {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background-color: white;
+    color: #1e1e2f;
+    font-size: 1rem;
+}
+
 /* Hide custom input field initially */
 #custom-time {
     display: none;
@@ -179,6 +188,11 @@ input[type="number"] {
     /* Adds space between elements within each group */
     flex: 0 1 auto;
     /* Ensures the group doesn't stretch too much */
+    border: #ccc;
+}
+
+.display-name-group {
+    display: table;
 }
 
 .upload-group select {
