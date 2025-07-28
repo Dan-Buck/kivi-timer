@@ -3,6 +3,7 @@ const session = require("express-session");
 const socketIo = require("socket.io");
 const http = require("http");
 const path = require("path");
+const fs = require("fs");
 const dotenv = require("dotenv");
 dotenv.config();
 const sessionAuth = require("./middleware/sessionAuth");
@@ -232,7 +233,7 @@ function reset() {
     roundStarted = false;
     clearInterval(timerInterval);
     clearInterval(turnoverInterval);
-    io.emit("timer-update", { remainingTime });
+    timerUpdateEmit();
     io.emit("settings-update", { roundSettings });
     io.emit("round-end");
 }
@@ -242,7 +243,7 @@ function runTimer() {
     timerInterval = setInterval(() => {
         if (remainingTime > 0) {
             remainingTime--;
-            io.emit("timer-update", { remainingTime });
+            timerUpdateEmit(remainingTime);
         } else {
             if (roundSettings.timerMode === 120) {
                 remainingTime = roundSettings.timerMode;
@@ -251,7 +252,7 @@ function runTimer() {
             clearInterval(timerInterval);
             betweenRounds = true;
             io.emit("round-end");
-            io.emit("timer-update", { remainingTime: roundSettings.turnover });
+            timerUpdateEmit(roundSettings.turnover);
             runTurnoverTimer();
         }
     }, 1000);
@@ -264,13 +265,13 @@ function runTurnoverTimer() {
     turnoverInterval = setInterval(() => {
         if (remainingTurnoverTime > 0) {
             remainingTurnoverTime--;
-            io.emit("timer-update", { remainingTime: remainingTurnoverTime });
+            timerUpdateEmit(remainingTurnoverTime);
         } else {
             clearInterval(turnoverInterval)
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
             console.log("round " + roundState + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
-            io.emit("timer-update", { remainingTime: roundSettings.timerMode });
+            timerUpdateEmit(roundSettings.timerMode);
             advanceRoundState();
             remainingTime = roundSettings.timerMode;
             runTimer();
@@ -327,6 +328,29 @@ function selectRoundState(placement) {
 
     for (let step = 0; step < steps; step++) {
         advanceRoundState();
+    }
+}
+
+let writeErrorFlag;
+// emits timer update plus writes to txt
+function timerUpdateEmit(time) {
+    if (!time) {
+        io.emit("timer-update", { remainingTime })
+    } else {
+        io.emit("timer-update", { remainingTime: time });
+        // write to txt for video use (ruslan)
+        try {
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60);
+            const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+            const filePath = path.join(__dirname, "timer.txt");
+            fs.writeFileSync(filePath, formattedTime, "utf-8");
+        } catch (error) {
+            if (!writeErrorFlag) {
+                console.error("Failed to write timer to file:", error.message);
+            }
+            writeErrorFlag = true;
+        }
     }
 }
 

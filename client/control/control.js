@@ -236,7 +236,12 @@ function addEventListeners() {
 
 // takes user's athletes.csv and converts to json for POST to server
 function csvToJson(csv) {
-    const rows = csv.trim().split("\n").map(row => row.split(","));
+    const rows = csv
+        .trim()
+        .split("\n")
+        .map(row => row.trim())
+        .filter(row => row !== "") // remove blank lines
+        .map(row => row.split(","));
 
     return rows.map(row => ({
         id: row[0].trim(),
