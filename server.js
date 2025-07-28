@@ -3,7 +3,7 @@ const session = require("express-session");
 const socketIo = require("socket.io");
 const http = require("http");
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs").promises;
 const dotenv = require("dotenv");
 dotenv.config();
 const sessionAuth = require("./middleware/sessionAuth");
@@ -11,31 +11,23 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const ngrok = require("ngrok");
-const settings = require("./misc/settings");
+const settings = require("./misc/config");
 const { on } = require("events");
 const { emit } = require("process");
 
-//get settings/configs
-const port = settings.port || 5000;
-const controlKey = process.env.CONTROL_PASSWORD;
-const ngrokAuth = process.env.NGROK_AUTHTOKEN;
-const ngrokHost = process.env.NGROK_HOSTNAME;
-const tunnelAuth = process.env.NGROK_TUNNEL_AUTH;
 
+//get settings/configs
+const port = settings.port;
+const controlKey = settings.controlKey;
+const ngrokAuth = settings.ngrok.authtoken;
+const ngrokHost = settings.ngrok.hostname;
+const tunnelAuth = settings.ngrok.tunnelAuth;
+let roundSettings = settings.roundSettings;
 
 // timer management vars
 let remainingTime, timerInterval, turnoverInterval, betweenRounds, roundStarted;
 let remainingTurnoverTime = 0;
 let roundState = 0;
-
-// round settings with defaults
-let roundSettings = {
-    timerMode: 300,
-    finalsMode: false,
-    turnover: 15,
-    boulders: 5,
-    zones: 0,
-}
 
 // athlete list
 let athletes = {
@@ -50,7 +42,6 @@ let groups = {
     "female": "",
     "combined": "",
 }
-
 
 // Setup session middleware
 app.use(
@@ -72,8 +63,8 @@ app.use(express.json());
 // Middleware function to validate access key and create session
 app.post("/control", (req, res) => {
     const { password } = req.body;
-
-    if (password === controlKey) {
+    // if controlKey not set, anyone can access control 
+    if (password === controlKey || !controlKey) {
         req.session.authenticated = true;
         req.session.userType = "controller";
         res.status(200).json({ message: "Access granted" });
@@ -143,6 +134,12 @@ app.get("/athletes", (req, res) => {
 app.get("/round-settings", (req, res) => {
     res.json(roundSettings);
 })
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Something went wrong!" });
+});
 
 // Sockets
 io.on("connection", (socket) => {
@@ -335,40 +332,54 @@ let writeErrorFlag;
 // emits timer update plus writes to txt
 function timerUpdateEmit(time) {
     if (!time) {
-        io.emit("timer-update", { remainingTime })
-    } else {
-        io.emit("timer-update", { remainingTime: time });
-        // write to txt for video use (ruslan)
-        try {
-            const minutes = Math.floor(time / 60);
-            const seconds = Math.floor(time % 60);
-            const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
-            const filePath = path.join(__dirname, "timer.txt");
-            fs.writeFileSync(filePath, formattedTime, "utf-8");
-        } catch (error) {
-            if (!writeErrorFlag) {
-                console.error("Failed to write timer to file:", error.message);
-            }
+        io.emit("timer-update", { remainingTime });
+        return
+    }
+
+    io.emit("timer-update", { remainingTime: time });
+
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    const filePath = path.join(__dirname, "timer.txt");
+
+    fs.writeFile(filePath, formattedTime, "utf-8").catch(err => {
+        if (!writeErrorFlag) {
+            console.error("Timer file write failed:", err.message);
             writeErrorFlag = true;
         }
-    }
+    });
 }
 
 let ngrokUrl = ""; // Store the generated ngrok URL
+// Server start with error handling 
+try {
+    server.listen(port, async () => {
+        console.log(`Server is running on http://localhost:${port}`);
 
-server.listen(port, async () => {
-    console.log(`Server is running on http://localhost:${port}`);
-
-    const url = await ngrok.connect({
-        addr: port,
-        authtoken: ngrokAuth,
-        basic_auth: tunnelAuth,
-        region: 'eu',
-        hostname: ngrokHost
+        const url = await ngrok.connect({
+            addr: port,
+            authtoken: ngrokAuth,
+            basic_auth: tunnelAuth,
+            region: 'eu',
+            hostname: ngrokHost
+        });
+        console.log(`ngrok tunnel established at ${url}`);
+        ngrokUrl = url;
     });
-    console.log(`ngrok tunnel established at ${url}`);
-    ngrokUrl = url;
+} catch (error) {
+    console.error("Failed to start server: ", err.message);
+}
 
+process.on("SIGINT", async () => {
+    console.log("Shutting down...");
+    clearInterval(timerInterval);
+    clearInterval(turnoverInterval);
+    try {
+        await ngrok.disconnect(); // safely ignore if not running
+    } catch (err) {
+        console.warn("Ngrok disconnect failed (likely not running):", err.message);
+    }
+    process.exit(0);
 });
-
 
