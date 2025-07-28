@@ -3,7 +3,8 @@ const session = require("express-session");
 const socketIo = require("socket.io");
 const http = require("http");
 const path = require("path");
-const fs = require("fs").promises;
+const fs = require("fs");
+const fsp = require("fs/promises");  // fsp = fs.promises
 const dotenv = require("dotenv");
 dotenv.config();
 const sessionAuth = require("./middleware/sessionAuth");
@@ -11,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const ngrok = require("ngrok");
-const settings = require("./misc/config");
+const settings = require("./helpers/config");
 const { on } = require("events");
 const { emit } = require("process");
 
@@ -23,6 +24,7 @@ const ngrokAuth = settings.ngrok.authtoken;
 const ngrokHost = settings.ngrok.hostname;
 const tunnelAuth = settings.ngrok.tunnelAuth;
 let roundSettings = settings.roundSettings;
+let ngrokUrl = ""; // Store the generated ngrok URL
 
 // timer management vars
 let remainingTime, timerInterval, turnoverInterval, betweenRounds, roundStarted;
@@ -341,9 +343,9 @@ function timerUpdateEmit(time) {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    const filePath = path.join(__dirname, "timer.txt");
+    const filePath = path.join(__dirname, "misc/timer.txt");
 
-    fs.writeFile(filePath, formattedTime, "utf-8").catch(err => {
+    fsp.writeFile(filePath, formattedTime, "utf-8").catch(err => {
         if (!writeErrorFlag) {
             console.error("Timer file write failed:", err.message);
             writeErrorFlag = true;
@@ -351,7 +353,14 @@ function timerUpdateEmit(time) {
     });
 }
 
-let ngrokUrl = ""; // Store the generated ngrok URL
+// server logging
+const logStream = fs.createWriteStream("misc/server.log", { flags: 'a' });
+console.log = (...args) => {
+    const msg = `[${new Date().toISOString()}] ${args.join(" ")}\n`;
+    process.stdout.write(msg);
+    logStream.write(msg);
+};
+
 // Server start with error handling 
 try {
     server.listen(port, async () => {
