@@ -114,6 +114,7 @@ app.post("/athletes", (req, res) => {
             "female": "",
             "combined": "",
         }
+        console.log("athlete data cleared");
         return res.status(200).json({ message: "Athlete data cleared" });
     }
 

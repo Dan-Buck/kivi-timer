@@ -187,6 +187,9 @@ function addEventListeners() {
                 document.querySelectorAll("input[type='file']").forEach((input) => {
                     input.value = "";
                 })
+                document.querySelectorAll("input[class='group-names']").forEach((input) => {
+                    input.value = "";
+                })
             })
             .catch(error => {
                 console.error("Error deleting athlete data:", error);
