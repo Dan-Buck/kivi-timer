@@ -7,11 +7,22 @@ let roundSettings = {
     boulders: 5,
     zones: 0,
 }
+let betweenRounds = false;
 
 // Function to start WebSocket connection
 function startSockets(link) {
-    let betweenRounds = false;
     socket = io(link, { reconnection: false });
+
+    fetch("/round-status")
+        .then((res) => res.json())
+        .then((data) => {
+            updateOndeck(data);
+            if (data.betweenRounds) {
+                roundEnd();
+            } else {
+                roundBegin();
+            }
+        });
 
     // Handle timer update
     socket.on("timer-update", (data) => {
@@ -35,20 +46,11 @@ function startSockets(link) {
 
     // Handle round status messages
     socket.on("round-begin", () => {
-        betweenRounds = false;
-        showMessage("Go to Transit Zone:");
-        const message = document.querySelector(".message-container");
-        if (!message) return;
-        message.style.background = "yellow";
-        message.style.color = "black";
+        roundBegin();
     });
 
     socket.on("round-end", () => {
-        betweenRounds = true;
-        showMessage("Go to Climbing Zone:");
-        const message = document.querySelector(".message-container");
-        if (!message) return;
-        message.style.background = "green";
+        roundEnd();
     });
 
     // Handle settings update
@@ -92,6 +94,23 @@ function updateOndeck(data) {
             categoryContainer.appendChild(entry);
         });
     }
+}
+
+function roundEnd() {
+    betweenRounds = true;
+    showMessage("Go to Climbing Zone:");
+    const message = document.querySelector(".message-container");
+    if (!message) return;
+    message.style.background = "green";
+}
+
+function roundBegin() {
+    betweenRounds = false;
+    showMessage("Go to Transit Zone:");
+    const message = document.querySelector(".message-container");
+    if (!message) return;
+    message.style.background = "yellow";
+    message.style.color = "black";
 }
 
 // Function to show status messages

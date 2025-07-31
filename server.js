@@ -100,6 +100,10 @@ app.get("/connections", (req, res) => {
     res.json({ ngrokUrl, port });
 });
 
+// API for round status requests from new connections
+app.get("/round-status", (req, res) => {
+    res.json({ roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups, betweenRounds: betweenRounds });
+});
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
     if (roundStarted) {
@@ -297,7 +301,7 @@ function runTurnoverTimer() {
             clearInterval(turnoverInterval)
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
-            console.log("round " + roundState + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
+            console.log("stage " + roundState + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
             timerUpdateEmit(roundSettings.timerMode);
             advanceRoundState();
             remainingTime = roundSettings.timerMode;
