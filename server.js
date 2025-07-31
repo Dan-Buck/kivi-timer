@@ -158,7 +158,8 @@ app.use((err, req, res, next) => {
 
 // Sockets
 io.on("connection", (socket) => {
-    console.log("New socket connection established");
+    const ip = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
+    console.log(`New socket from IP: ${ip} (ID: ${socket.id})`);
 
     socket.on("start-timer", () => {
         // 5s countdown on first start
