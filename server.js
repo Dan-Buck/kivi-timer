@@ -102,6 +102,10 @@ app.get("/connections", (req, res) => {
 
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
+    if (roundStarted) {
+        return res.status(400).json({ error: "Round started: first 'Reset Entire Round'" });
+    }
+
     if (req.body.delete === "yes") {
         // Clear the athletes data
         athletes = {
@@ -194,6 +198,10 @@ io.on("connection", (socket) => {
     socket.on("round-name-update", (newRoundName) => {
         roundName = newRoundName;
         console.log(`round name update: ${roundName}`);
+    });
+
+    socket.on("group-name-update", (data) => {
+        groups[data.category] = data.newGroupName;
     });
 
     socket.on("reset-round", () => {
@@ -322,7 +330,6 @@ function advanceRoundState() {
             }
         }
     }
-    console.log(`emitting roundname: ${roundName}`);
     io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
 }
 

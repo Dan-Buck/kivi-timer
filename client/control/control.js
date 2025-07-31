@@ -123,6 +123,11 @@ function addEventListeners() {
         const uploadBtn = group.querySelector(".upload-button");
         const groupName = group.querySelector("input[type='text']");
 
+        groupName.addEventListener("input", (event) => {
+            const newGroupName = event.target.value;
+            socket.emit("group-name-update", { newGroupName: newGroupName, category: categorySelect.value });
+        });
+
         uploadBtn.addEventListener("click", () => {
             if (fileInput.files.length === 0) {
                 alert("Please select a CSV file.");
@@ -158,7 +163,7 @@ function addEventListeners() {
                 })
                     .then(response => {
                         if (!response.ok) {
-                            alert("Upload not successful, please try again.");
+                            alert(`Upload not successful, please try again.`);
                         } else {
                             alert("Upload successful!");
                         }
