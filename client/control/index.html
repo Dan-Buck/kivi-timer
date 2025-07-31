@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shingo's Master Control</title>
+    <title>Master Control</title>
     <link rel="stylesheet" href="./control.css" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
 </head>
@@ -19,14 +19,21 @@
     <div class="settings-container">
         <button id="start-timer">Start/Resume</button>
         <button id="pause-timer">Pause</button>
-        <button id="zero-timer">Next Climber</button>
+        <button id="zero-timer">Reset Timer</button>
+        <button id="next-climber">Next Climber</button>
     </div>
 
     <hr style="width: 100%; border: 2px solid white; margin: 20px 0;">
 
     <!-- Control Panel -->
     <div id="controls" class="settings-container">
-        <button id="reset-timer">Reset Round</button>
+        <div class="round-name-container">
+            <form id="round-name-form">
+                <label for="round-name">Round Name:</label>
+                <input type="text" id="round-name" />
+                <button id="round-name-btn" type="submit">Update</button>
+            </form>
+        </div>
 
         <div class="round-settings-container">
             <div class="timer-mode">
@@ -110,6 +117,7 @@
         <div class="extra-buttons">
             <button id="upload-delete" class="delete-button">Clear Athlete Data</button>
             <button id="open-modal-btn" class="roundstate-button">Change Round State</button>
+            <button id="reset-round">Reset Entire Round</button>
         </div>
 
 
@@ -120,10 +128,17 @@
                 <h2>Place Athlete</h2>
                 <form id="round-state-form">
                     <label for="athlete-id">Athlete ID:</label>
-                    <input type="number" id="athlete-id" required />
+                    <input type="number" id="athlete-id" />
 
                     <label for="boulder-number"><br> Boulder:</label>
-                    <input type="number" id="boulder-number" required />
+                    <input type="number" id="boulder-number" />
+
+                    <hr style="width: 100%; border: 2px solid rgb(6, 6, 6); margin: 20px 0;">
+
+                    <h2>Or Select Round Stage</h2>
+                    <label for="stage-number"><br> Stage #:</label>
+                    <input type="number" id="stage-number" />
+
                     <br>
                     <button type="submit">Submit</button>
                 </form>

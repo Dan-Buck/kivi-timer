@@ -30,7 +30,7 @@ function startSockets(link) {
 
     // Handle ondeck update
     socket.on("ondeck-update", (data) => {
-        updateOndeck(data.ondeck);
+        updateOndeck(data);
     });
 
     // Handle round status messages
@@ -58,7 +58,13 @@ function startSockets(link) {
 }
 
 // update ondeck display
-function updateOndeck(ondeck) {
+function updateOndeck(data) {
+    const ondeck = data.ondeck;
+    const groups = data.groups;
+    const roundState = data.roundState;
+    const roundName = data.roundName;
+    console.log(`round name: ${roundName}`);
+
     const container = document.querySelector(".ondeck-container");
     for (const category in ondeck) {
         if (ondeck[category].length === 0) continue;
@@ -66,10 +72,11 @@ function updateOndeck(ondeck) {
         let categoryLabel = document.querySelector(`.ondeck-label-${category}`);
         if (!categoryLabel) {
             categoryLabel = document.createElement("h2")
-            categoryLabel.textContent = `${category}`;
             categoryLabel.classList.add(`ondeck-label-${category}`)
             container.appendChild(categoryLabel);
         }
+        categoryLabel.textContent = `${roundName} - ${groups[category]} - Stage # ${roundState}`;
+
         let categoryContainer = document.querySelector(`.ondeck-${category}`);
         if (!categoryContainer) {
             categoryContainer = document.createElement("div");

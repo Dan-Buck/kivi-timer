@@ -53,15 +53,16 @@ function addEventListeners() {
         socket.emit("zero-timer");
     });
 
-    document.getElementById("reset-timer").addEventListener("click", () => {
-        // Ask for user confirmation
-        const isConfirmed = window.confirm("Are you sure you want to reset the round?");
+    document.getElementById("next-climber").addEventListener("click", () => {
+        socket.emit("next-climber");
+    });
 
-        if (isConfirmed) {
-            socket.emit("reset-timer");
-        } else {
-            console.log("Reset round canceled.");
-        }
+    // Handle round name form submission
+    document.getElementById("round-name-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const roundName = document.getElementById("round-name").value;
+        socket.emit("round-name-update", roundName);
+        alert(`Round name update: ${roundName}`);
     });
 
     document.getElementById("timer-select").addEventListener("change", (event) => {
@@ -131,7 +132,6 @@ function addEventListeners() {
                 alert("Please enter a group name");
                 return;
             }
-            console.log("group name: " + groupName.value)
 
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -223,12 +223,24 @@ function addEventListeners() {
 
         const athleteID = parseInt(document.getElementById("athlete-id").value, 10);
         const boulder = parseInt(document.getElementById("boulder-number").value, 10);
+        const stage = parseInt(document.getElementById("stage-number").value, 10);
 
-        if (!isNaN(athleteID) && !isNaN(boulder)) {
-            socket.emit("change-round-state", { athleteID, boulder });
+        if ((!isNaN(athleteID) && !isNaN(boulder)) || (!isNaN(stage))) {
+            socket.emit("change-round-state", { athleteID, boulder, stage });
             modal.style.display = "none"; // Close modal after submission
         } else {
             alert("Please enter valid numbers.");
+        }
+    });
+
+    document.getElementById("reset-round").addEventListener("click", () => {
+        // Ask for user confirmation
+        const isConfirmed = window.confirm("Are you sure you want to reset the round?");
+
+        if (isConfirmed) {
+            socket.emit("reset-round");
+        } else {
+            console.log("Reset round canceled.");
         }
     });
 

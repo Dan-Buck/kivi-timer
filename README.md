@@ -76,6 +76,11 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 - It is good practice to click "Clear Athete Data" between rounds if not restarting the server.
 - Use the "Place Athlete" feature only if needed to resume a round that was interrupted by server outage.
 
+### MISC folder
+This folder contains several files used at runtime that may be useful to you:
+- **server.log** 
+- **state-backup.json** : updated at round turnover. Currently experimental, may be used for manually restoring round state.
+- **timer.txt** : updated at every 1s `timer-update` emit, potentially utilized for connection-free timer rendering.
 
 ## Ngrok Setup
 The app uses Ngrok for external access. The tunnel URL is displayed in the console when the server starts. Share this with other clients and users who need access. 

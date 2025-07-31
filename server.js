@@ -32,6 +32,7 @@ let ngrokUrl = ""; // Store the generated ngrok URL
 let remainingTime, timerInterval, turnoverInterval, betweenRounds, roundStarted;
 let remainingTurnoverTime = 0;
 let roundState = 0;
+let roundName = "";
 
 // athlete list
 let athletes = {
@@ -45,6 +46,13 @@ let groups = {
     "male": "",
     "female": "",
     "combined": "",
+}
+
+// ondeck tracker
+let ondeck = {
+    "male": [],
+    "female": [],
+    "combined": [],
 }
 
 // Setup session middleware
@@ -167,18 +175,27 @@ io.on("connection", (socket) => {
 
     socket.on("pause-timer", () => {
         console.log("timer paused");
-        clearInterval(timerInterval);
-        clearInterval(turnoverInterval);
-        timerInterval = null;
-        turnoverInterval = null;
+        clearAllIntervals();
     });
 
     socket.on("zero-timer", () => {
+        console.log("timer zero-ed");
+        clearAllIntervals();
+        remainingTime = roundSettings.timerMode;
+        timerUpdateEmit(remainingTime);
+    });
+
+    socket.on("next-climber", () => {
         console.log("next climber: timer paused, round advanced");
         reset();
-    })
+    });
 
-    socket.on("reset-timer", () => {
+    socket.on("round-name-update", (newRoundName) => {
+        roundName = newRoundName;
+        console.log(`round name update: ${roundName}`);
+    });
+
+    socket.on("reset-round", () => {
         console.log("round reset");
         roundState = 0;
         reset();
@@ -214,7 +231,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on("change-round-state", (data) => {
-        console.log(`round state change: athlete# ${data.athleteID} placed on boulder# ${data.boulder}`);
+        console.log(`round state change: athlete# [${data.athleteID}] boulder# [${data.boulder}] stage# [${data.stage}]`);
         reset();
         roundState = 0;
         selectRoundState(data);
@@ -226,11 +243,17 @@ function reset() {
     remainingTime = roundSettings.timerMode;
     betweenRounds = false;
     roundStarted = false;
-    clearInterval(timerInterval);
-    clearInterval(turnoverInterval);
+    clearAllIntervals();
     timerUpdateEmit();
     io.emit("settings-update", { roundSettings });
     io.emit("round-end");
+}
+
+function clearAllIntervals() {
+    clearInterval(timerInterval);
+    clearInterval(turnoverInterval);
+    timerInterval = null;
+    turnoverInterval = null;
 }
 
 function runTimer() {
@@ -277,8 +300,8 @@ function runTurnoverTimer() {
 // moves climbers through boulders by 1 step
 function advanceRoundState() {
     roundState++;
-    saveStateToFile(remainingTime, roundState);
-    let ondeck = {
+    saveStateToFile(roundName, roundState, remainingTime);
+    ondeck = {
         "male": [],
         "female": [],
         "combined": [],
@@ -298,29 +321,36 @@ function advanceRoundState() {
             }
         }
     }
-    io.emit("ondeck-update", { ondeck });
+    console.log(`emitting roundname: ${roundName}`);
+    io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
 }
 
 // advances roundstate to place a climber on a specific boulder
-function selectRoundState(placement) {
-    const athleteID = String(placement.athleteID);
-    const boulder = placement.boulder;
-    let placeInOrder = -1
-    let foundCategory;
-    for (const category in athletes) {
-        placeInOrder = athletes[category].findIndex(athlete => athlete.id === athleteID);
-        if (placeInOrder !== -1) {
-            foundCategory = category
-            break;
+function selectRoundState(data) {
+    let steps = 0;
+    if (data.stage) {
+        console.log(`advancing ${data.stage} steps`);
+        steps = data.stage - 1;
+    } else {
+        const athleteID = String(data.athleteID);
+        const boulder = data.boulder;
+        let placeInOrder = -1
+        let foundCategory;
+        for (const category in athletes) {
+            placeInOrder = athletes[category].findIndex(athlete => athlete.id === athleteID);
+            if (placeInOrder !== -1) {
+                foundCategory = category
+                break;
+            }
         }
-    }
-    if (placeInOrder === -1 || !foundCategory) {
-        console.log('could not place athlete, ID not found in list');
-        return;
-    }
+        if (placeInOrder === -1 || !foundCategory) {
+            console.log('could not place athlete, ID not found in list');
+            return;
+        }
 
-    const multiplier = roundSettings.finalsMode ? athletes[foundCategory].length : 2;
-    const steps = placeInOrder + multiplier * (boulder - 1);
+        const multiplier = roundSettings.finalsMode ? athletes[foundCategory].length : 2;
+        steps = placeInOrder + multiplier * (boulder - 1);
+    }
 
     for (let step = 0; step < steps; step++) {
         advanceRoundState();

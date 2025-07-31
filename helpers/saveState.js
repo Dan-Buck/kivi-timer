@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-function saveStateToFile(remainingTime, roundState) {
+function saveStateToFile(roundName, roundState, remainingTime) {
     const data = {
+        roundName: roundName,
         remainingTime: remainingTime,
         roundState: roundState,
     };

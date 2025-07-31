@@ -70,9 +70,9 @@ button {
     color: #1e1e2f;
 }
 
-#reset-timer {
-    background-color: #dc3545;
-    color: white;
+#next-climber {
+    background-color: purple;
+    color: #ccc;
 }
 
 /* Button Hover & Tap Effects */
@@ -150,7 +150,7 @@ input[type="text"] {
 }
 
 .round-settings-container,
-.extra-buttons {
+#round-name-form {
     display: flex;
     flex-wrap: nowrap;
     /* Prevents wrapping */
@@ -164,6 +164,17 @@ input[type="text"] {
     overflow: hidden;
     /* Ensures elements don't break layout */
 }
+
+.extra-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    /* Prevents wrapping */
+    gap: 20px;
+    justify-content: center;
+    /* Aligns the settings group in the center */
+    align-items: center;
+}
+
 
 
 /* Container for the upload groups */
@@ -210,24 +221,19 @@ input[type="text"] {
 }
 
 /* Clear athlete data button */
-.delete-button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #ff5e57;
-    border: none;
+#upload-delete {
+    background-color: #ff9e43;
     color: white;
-    cursor: pointer;
-    border-radius: 8px;
 }
 
-.roundstate-button {
-    margin-top: 20px;
-    padding: 10px 20px;
+#open-modal-btn {
     background-color: rgb(17, 115, 156);
-    border: none;
     color: white;
-    cursor: pointer;
-    border-radius: 8px;
+}
+
+#reset-round {
+    background-color: #dc3546;
+    color: white;
 }
 
 .delete-button:hover {
