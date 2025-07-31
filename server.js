@@ -56,12 +56,6 @@ app.use(
     })
 );
 
-// debugging requests
-// app.use((req, res, next) => {
-//     console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
-//     next(); // Continue to the next middleware or route handler
-// });
-
 app.use(express.json());
 
 // Middleware function to validate access key and create session
@@ -360,16 +354,20 @@ function timerUpdateEmit(time) {
 try {
     server.listen(port, async () => {
         console.log(`Server is running on http://localhost:${port}`);
+        try {
+            const url = await ngrok.connect({
+                addr: port,
+                authtoken: ngrokAuth,
+                basic_auth: tunnelAuth,
+                region: 'eu',
+                hostname: ngrokHost
+            });
+            console.log(`ngrok tunnel established at ${url}`);
+            ngrokUrl = url;
+        } catch (err) {
+            console.error("NONFATAL - failed to connect to ngrok: ", err.message);
+        }
 
-        const url = await ngrok.connect({
-            addr: port,
-            authtoken: ngrokAuth,
-            basic_auth: tunnelAuth,
-            region: 'eu',
-            hostname: ngrokHost
-        });
-        console.log(`ngrok tunnel established at ${url}`);
-        ngrokUrl = url;
     });
 } catch (error) {
     console.error("Failed to start server: ", err.message);
