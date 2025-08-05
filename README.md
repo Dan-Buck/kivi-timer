@@ -57,6 +57,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 - The **fullscreen timer** is the homepage `/`. You must interact with the page for sounds to play. Click the timer to open the controls.
 - Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the preset key. No sound on this page.
 - The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder. Recommended resolution: 1920x1018.
+- The **general info** screen is at `/info` and shows the timer, stage #, and names of active groups. Interact for sound. 
 - View the uploaded **athlete data** at `/athletes`. This page is for verification and not user-facing (yet).
 - The **addresses** for the NGROK URL and localhost port are available at `/connections`, returning: json({ ngrokUrl, port })
 
@@ -70,11 +71,11 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
     Athlete ID 3,First Name 3,Last Name 3
     ```
    Remember to specify gender for each upload. <b>NB: there can only be one group per male/female/combined category.</b>
-- Press "Reset", which will queue the athletes and timers for all screens.
-- Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the round timer.
-- The "Next Climber" button is for indefinite-length rounds such as finals. Click it when a climber finished to reset the timer and advance the round.
+- Press "Reset Entire Round", which will queue the athletes and timers for all screens.
+- Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the Stage 1 round timer.
+- The "Next Climber" button is for indefinite-length rounds such as finals. Click it when a climber finished to reset the timer and advance the round.  "Reset Timer" will reset the timer without changing the roundstate.
 - It is good practice to click "Clear Athete Data" between rounds if not restarting the server.
-- Use the "Place Athlete" feature only if needed to resume a round that was interrupted by server outage.
+- Use the "Place Athlete" feature only if needed to resume a round that was interrupted, e.g. server outage. NB: you can enter negative stages if desired. 
 
 ### MISC folder
 This folder contains several files used at runtime that may be useful to you:
