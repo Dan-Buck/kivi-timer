@@ -72,7 +72,7 @@ app.use(express.json());
 app.post("/control", (req, res) => {
     const { password } = req.body;
     // if controlKey not set, anyone can access control 
-    if (password === controlKey || !controlKey) {
+    if (password === controlKey || (!controlKey && password === "password")) {
         req.session.authenticated = true;
         req.session.userType = "controller";
         res.status(200).json({ message: "Access granted" });

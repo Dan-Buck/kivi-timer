@@ -37,7 +37,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
    CONTROL_PASSWORD="your-chosen-control-password"
    ```
 
-   and optionally add authentication to the URL tunnel:
+   `CONTROL_PASSWORD` defaults to "password".  Optionally add authentication to the URL tunnel:
     ```env
     NGROK_TUNNEL_AUTH="username:password"
     ```
@@ -75,7 +75,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 - Now hitting "Start/Resume" will lead with a 5s countdown then immediately into the Stage 1 round timer.
 - The "Next Climber" button is for indefinite-length rounds such as finals. Click it when a climber finished to reset the timer and advance the round.  "Reset Timer" will reset the timer without changing the roundstate.
 - It is good practice to click "Clear Athete Data" between rounds if not restarting the server.
-- Use the "Place Athlete" feature only if needed to resume a round that was interrupted, e.g. server outage. NB: you can enter negative stages if desired. 
+- Use the "Change Round State" only to resume a round that was interrupted, e.g. server outage, or give an athlete bonus time because of an in-round issue. NB: you can enter negative stages if desired. 
 
 ### MISC folder
 This folder contains several files used at runtime that may be useful to you:
@@ -84,7 +84,7 @@ This folder contains several files used at runtime that may be useful to you:
 - **timer.txt** : updated at every 1s `timer-update` emit, potentially utilized for connection-free timer rendering.
 
 ## Ngrok Setup
-The app uses Ngrok for external access. The tunnel URL is displayed in the console when the server starts. Share this with other clients and users who need access. 
+The app can use Ngrok for external access and to provide a redundant connection method when local networks are spotty. You will need to register and configure an account (free and easy, see above). The tunnel URL is displayed in the console when the server starts. Share this with other clients and users who need access. 
 
 ## Contributing
 Feel free to submit pull requests or issues to improve the app.
