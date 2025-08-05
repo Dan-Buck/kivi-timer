@@ -85,6 +85,9 @@ app.use("/socket.io", express.static(path.join(__dirname, "node_modules", "socke
 // transit area screen handler
 app.use("/transit", express.static(path.join(__dirname, "./client/transit")));
 
+// gen info handler
+app.use("/info", express.static(path.join(__dirname, "./client/info")));
+
 // Middleware to protect control page
 app.use("/control", sessionAuth("controller"), express.static(path.join(__dirname, "./client/control")));
 
