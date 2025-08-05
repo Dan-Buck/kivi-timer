@@ -25,7 +25,7 @@ body {
     display: flex;
     font-size: 2rem;
     font-weight: bold;
-    /*padding: 10px 20px;*/
+    width: 200px;
     border-radius: 8px;
     background-color: #292942;
     /* Slightly lighter dark */

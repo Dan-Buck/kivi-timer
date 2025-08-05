@@ -17,6 +17,7 @@ const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const { on } = require("events");
 const { emit } = require("process");
+const { time } = require("console");
 
 
 //get settings/configs
@@ -29,7 +30,8 @@ let roundSettings = settings.roundSettings;
 let ngrokUrl = ""; // Store the generated ngrok URL
 
 // timer management vars
-let remainingTime, timerInterval, turnoverInterval, betweenRounds, roundStarted;
+let timerInterval, turnoverInterval, betweenRounds, roundStarted;
+let remainingTime = 0;
 let remainingTurnoverTime = 0;
 let roundState = 0;
 let roundName = "";
@@ -239,9 +241,18 @@ io.on("connection", (socket) => {
     })
 
     socket.on("change-round-state", (data) => {
-        console.log(`round state change: athlete# [${data.athleteID}] boulder# [${data.boulder}] stage# [${data.stage}]`);
+        console.log(`
+            round state change: athlete# [${data.athleteID}] boulder# [${data.boulder}] stage# [${data.stage}] time: [${data.time}]
+            `);
         reset();
         roundState = 0;
+        if (data.time) {
+            remainingTime = data.time;
+            roundStarted = true;
+            betweenRounds = false;
+            io.emit("round-begin", { groupName: groups, roundState: roundState });
+            timerUpdateEmit(remainingTime);
+        }
         selectRoundState(data);
     });
 
@@ -384,6 +395,9 @@ function selectRoundState(data) {
         const multiplier = roundSettings.finalsMode ? athletes[foundCategory].length : 2;
         steps = placeInOrder + multiplier * (boulder - 1);
     }
+
+    // check for timer set to begin directly in stage
+    if (data.time) { steps++ };
 
     for (let step = 0; step < steps; step++) {
         advanceRoundState();

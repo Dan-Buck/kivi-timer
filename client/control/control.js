@@ -38,7 +38,7 @@ function startSockets(link) {
                 const minutes = Math.floor(time / 60);
                 const seconds = Math.floor(time % 60);
                 if (betweenRounds) {
-                    timerElement.textContent = `<> ${seconds.toString().padStart(2, "0")}`;
+                    timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
                 } else {
                     timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
                 }
@@ -258,9 +258,10 @@ function addEventListeners() {
         const athleteID = parseInt(document.getElementById("athlete-id").value, 10);
         const boulder = parseInt(document.getElementById("boulder-number").value, 10);
         const stage = parseInt(document.getElementById("stage-number").value, 10);
+        const time = parseInt(document.getElementById("timer-set").value, 10)
 
         if ((!isNaN(athleteID) && !isNaN(boulder)) || (!isNaN(stage))) {
-            socket.emit("change-round-state", { athleteID, boulder, stage });
+            socket.emit("change-round-state", { athleteID, boulder, stage, time });
             modal.style.display = "none"; // Close modal after submission
         } else {
             alert("Please enter valid numbers.");
@@ -272,6 +273,7 @@ function addEventListeners() {
         const isConfirmed = window.confirm("Are you sure you want to reset the round?");
 
         if (isConfirmed) {
+
             socket.emit("reset-round");
         } else {
             console.log("Reset round canceled.");
