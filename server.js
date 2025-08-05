@@ -106,24 +106,15 @@ app.get("/round-status", (req, res) => {
 });
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
-    if (roundStarted) {
-        return res.status(400).json({ error: "Round started: first 'Reset Entire Round'" });
-    }
-
     if (req.body.delete === "yes") {
-        // Clear the athletes data
-        athletes = {
-            "male": [],
-            "female": [],
-            "combined": []
-        };
-        groups = {
-            "male": "",
-            "female": "",
-            "combined": "",
-        }
+        // Clear the athletes/groups/undeck data
+        clearData();
         console.log("athlete data cleared");
         return res.status(200).json({ message: "Athlete data cleared" });
+    }
+
+    if (roundStarted) {
+        return res.status(400).json({ error: "Round started: first 'Reset Entire Round'" });
     }
 
     const { athletes: receivedAthletes, category: receivedCategory, groupName: receivedGroupName } = req.body; // Expecting { athletes: [...] }
@@ -215,7 +206,7 @@ io.on("connection", (socket) => {
         reset();
         // populate transit area boulder list
         for (const category in athletes) {
-            if (athletes[category].length > 0) {
+            if (groups[category].length > 0) {
                 roundState = -1;
                 advanceRoundState();
                 return;
@@ -263,6 +254,24 @@ function reset() {
     io.emit("round-end");
 }
 
+function clearData() {
+    athletes = {
+        "male": [],
+        "female": [],
+        "combined": []
+    };
+    groups = {
+        "male": "",
+        "female": "",
+        "combined": "",
+    };
+    ondeck = {
+        "male": [],
+        "female": [],
+        "combined": [],
+    }
+}
+
 function clearAllIntervals() {
     clearInterval(timerInterval);
     clearInterval(turnoverInterval);
@@ -302,7 +311,7 @@ function runTurnoverTimer() {
             clearInterval(turnoverInterval)
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
-            console.log("stage " + roundState + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
+            console.log("stage " + (roundState + 1) + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
             timerUpdateEmit(roundSettings.timerMode);
             advanceRoundState();
             remainingTime = roundSettings.timerMode;
@@ -320,18 +329,20 @@ function advanceRoundState() {
         "female": [],
         "combined": [],
     }
-    for (const category in athletes) {
-        if (athletes[category].length === 0) continue;
+    if (roundState >= 0) {
+        for (const category in athletes) {
+            if (athletes[category].length === 0) continue;
 
-        // if finalsMode then only 1 climber on the wall at a time
-        if (roundSettings.finalsMode) {
-            const nextUp = (roundState % athletes[category].length); // index 0 is first climber...
-            const boulder = Math.ceil((roundState + 1) / athletes[category].length);
-            ondeck[category].push({ boulder: (boulder === 0) ? 1 : boulder, athlete: athletes[category][nextUp] });
-        } else {
-            for (let boulder = 1; boulder <= roundSettings.boulders; boulder++) {
-                const nextUp = roundState - 2 * (boulder - 1);
-                ondeck[category].push({ boulder, athlete: (nextUp >= 0 && nextUp < athletes[category].length) ? athletes[category][nextUp] : null });
+            // if finalsMode then only 1 climber on the wall at a time
+            if (roundSettings.finalsMode) {
+                const nextUp = (roundState % athletes[category].length); // index 0 is first climber...
+                const boulder = Math.ceil((roundState + 1) / athletes[category].length);
+                ondeck[category].push({ boulder: (boulder === 0) ? 1 : boulder, athlete: athletes[category][nextUp] });
+            } else {
+                for (let boulder = 1; boulder <= roundSettings.boulders; boulder++) {
+                    const nextUp = roundState - 2 * (boulder - 1);
+                    ondeck[category].push({ boulder, athlete: (nextUp >= 0 && nextUp < athletes[category].length) ? athletes[category][nextUp] : null });
+                }
             }
         }
     }
@@ -342,6 +353,12 @@ function advanceRoundState() {
 function selectRoundState(data) {
     let steps = 0;
     if (data.stage) {
+        if (data.stage < 0) {
+            console.log(`setting round stage to ${data.stage}`);
+            roundState = data.stage - 2;
+            advanceRoundState();
+            return;
+        }
         console.log(`advancing ${data.stage} steps`);
         steps = data.stage - 1;
     } else {

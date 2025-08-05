@@ -56,7 +56,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 ### Endpoints
 - The **fullscreen timer** is the homepage `/`. You must interact with the page for sounds to play. Click the timer to open the controls.
 - Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the preset key. No sound on this page.
-- The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder.
+- The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder. Recommended resolution: 1920x1018.
 - View the uploaded **athlete data** at `/athletes`. This page is for verification and not user-facing (yet).
 - The **addresses** for the NGROK URL and localhost port are available at `/connections`, returning: json({ ngrokUrl, port })
 

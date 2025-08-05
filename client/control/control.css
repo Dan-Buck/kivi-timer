@@ -22,14 +22,20 @@ body {
 
 /* Timer Container */
 .timer-container {
+    display: flex;
     font-size: 2rem;
     font-weight: bold;
-    padding: 10px 20px;
+    /*padding: 10px 20px;*/
     border-radius: 8px;
     background-color: #292942;
     /* Slightly lighter dark */
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
     margin-bottom: 20px;
+}
+
+.timer,
+.stage-display {
+    padding: 10px 20px;
 }
 
 /* Settings Container */

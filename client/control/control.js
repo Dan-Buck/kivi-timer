@@ -1,4 +1,5 @@
 let socket;
+let betweenRounds = false;
 
 // Get dynamic ngrok URL from server before attaching event listeners
 fetch("/connections")
@@ -29,13 +30,33 @@ function startSockets(link) {
             resolve(); // Ensure event listeners attach after socket is ready
         });
 
+        // Handle timer update
         socket.on("timer-update", (data) => {
+            const time = data.remainingTime;
             const timerElement = document.querySelector(".timer");
             if (timerElement) {
-                const minutes = Math.floor(data.remainingTime / 60);
-                const seconds = Math.floor(data.remainingTime % 60);
-                timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+                const minutes = Math.floor(time / 60);
+                const seconds = Math.floor(time % 60);
+                if (betweenRounds) {
+                    timerElement.textContent = `<> ${seconds.toString().padStart(2, "0")}`;
+                } else {
+                    timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+                }
             }
+        });
+
+        socket.on("round-begin", () => {
+            betweenRounds = false;
+        });
+
+        socket.on("round-end", () => {
+            betweenRounds = true;
+        });
+
+        socket.on("ondeck-update", (data) => {
+            const roundState = data.roundState;
+            const stageDisplay = document.querySelector(".stage-display");
+            stageDisplay.textContent = `#${roundState}`;
         });
     });
 }
@@ -179,27 +200,32 @@ function addEventListeners() {
     });
 
     document.getElementById("upload-delete").addEventListener("click", () => {
-        fetch("/athletes", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                delete: "yes",
-            })
-        })
-            .then(response => response.json())
-            .then(data => {
-                alert("Athlete data cleared!");
-                document.querySelectorAll("input[type='file']").forEach((input) => {
-                    input.value = "";
-                })
-                document.querySelectorAll("input[class='group-names']").forEach((input) => {
-                    input.value = "";
+        const isConfirmed = window.confirm("Are you sure you want to clear athlete data?");
+        if (isConfirmed) {
+            fetch("/athletes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    delete: "yes",
                 })
             })
-            .catch(error => {
-                console.error("Error deleting athlete data:", error);
-                alert("Delete not successful, please try again.");
-            });
+                .then(response => response.json())
+                .then(data => {
+                    alert("Athlete data cleared!");
+                    document.querySelectorAll("input[type='file']").forEach((input) => {
+                        input.value = "";
+                    })
+                    document.querySelectorAll("input[class='group-names']").forEach((input) => {
+                        input.value = "";
+                    })
+                })
+                .catch(error => {
+                    console.error("Error deleting athlete data:", error);
+                    alert("Delete not successful, please try again.");
+                });
+        } else {
+            console.log("Data clear canceled.");
+        }
     });
 
     // Modal elements

@@ -65,11 +65,10 @@ function updateOndeck(data) {
     const groups = data.groups;
     const roundState = data.roundState;
     const roundName = data.roundName;
-    console.log(`round name: ${roundName}`);
 
     const container = document.querySelector(".ondeck-container");
     for (const category in ondeck) {
-        if (ondeck[category].length === 0) continue;
+        if (groups[category].length === 0) continue;
 
         let categoryLabel = document.querySelector(`.ondeck-label-${category}`);
         if (!categoryLabel) {
