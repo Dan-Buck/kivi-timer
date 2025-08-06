@@ -1,5 +1,6 @@
 /node_modules
 .env
 timer.txt
-/misc/server.log
-/misc/state-backup.json
+/misc/*
+!/misc
+!/misc/.gitkeep
