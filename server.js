@@ -307,6 +307,9 @@ function runTimer() {
             clearInterval(timerInterval);
             betweenRounds = true;
             io.emit("round-end");
+            // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
+            io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
+
             timerUpdateEmit(roundSettings.turnover);
             runTurnoverTimer();
         }
@@ -401,6 +404,10 @@ function selectRoundState(data) {
 
     for (let step = 0; step < steps; step++) {
         advanceRoundState();
+    }
+    // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
+    if (!data.time) {
+        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
     }
 }
 
