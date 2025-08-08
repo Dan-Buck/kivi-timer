@@ -3,27 +3,37 @@ let betweenRounds = false;
 
 // Get dynamic ngrok URL from server before attaching event listeners
 fetch("/connections")
-    .then((response) => response.json())
-    .then((data) => {
-        let link
-        const isLocalhost = window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1" ||
-            window.location.hostname === "::1";
+    .then((res) => res.json())
+    .then(({ lanIPs, port, ngrokUrl }) => {
+        const host = window.location.hostname;
 
-        if (!data.ngrokUrl || isLocalhost) {
-            link = `http://localhost:${data.port}`;
+        let link;
+        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
+            link = `http://localhost:${port}`;
+        } else if (lanIPs.includes(host)) {
+            link = `http://${host}:${port}`;
         } else {
-            link = data.ngrokUrl.replace("https://", "wss://");
+            link = ngrokUrl.replace("https://", "wss://");
         }
-        startSockets(link).then(() => {
-            addEventListeners();
-        })
+
+        startSockets(link).then(addEventListeners);
     });
+
 
 // WebSocket setup function (returns a Promise)
 function startSockets(link) {
     return new Promise((resolve) => {
         socket = io(link, { reconnection: false }); // Assign to global variable
+        fetch("/round-status")
+            .then((res) => res.json())
+            .then((data) => {
+                updateInfo(data);
+                if (data.betweenRounds) {
+                    betweenRounds = true;
+                } else {
+                    betweenRounds = false;
+                }
+            });
 
         socket.on("connect", () => {
             console.log("Socket connected.");
@@ -280,6 +290,16 @@ function addEventListeners() {
         }
     });
 
+}
+
+function updateInfo(data) {
+    const roundState = data.roundState;
+    const roundName = data.roundName;
+
+    const stageDisplay = document.querySelector(".stage-display");
+    stageDisplay.textContent = `#${roundState}`;
+    const roundNameDisplay = document.getElementById("round-name")
+    roundNameDisplay.value = roundName;
 }
 
 // takes user's athletes.csv and converts to json for POST to server

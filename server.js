@@ -15,6 +15,7 @@ const io = socketIo(server);
 const ngrok = require("ngrok");
 const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
+const getLocalIPs = require("./helpers/connections");
 const { on } = require("events");
 const { emit } = require("process");
 const { time } = require("console");
@@ -102,7 +103,11 @@ app.use(express.static(path.join(__dirname, "client")));
 
 // API route to fetch the ngrok URL and localhost port
 app.get("/connections", (req, res) => {
-    res.json({ ngrokUrl, port });
+    res.json({
+        ngrokUrl,
+        port,
+        lanIPs: getLocalIPs()
+    });
 });
 
 // API for round status requests from new connections

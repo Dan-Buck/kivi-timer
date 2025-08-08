@@ -136,17 +136,19 @@ function updateBoulders(count) {
 
 // Get dynamic ngrok URL and start sockets
 fetch("/connections")
-    .then((response) => response.json())
-    .then((data) => {
-        const isLocalhost = window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1" ||
-            window.location.hostname === "::1";
+    .then((res) => res.json())
+    .then(({ lanIPs, port, ngrokUrl }) => {
+        const host = window.location.hostname;
+
         let link;
-        if (!data.ngrokUrl || isLocalhost) {
-            link = `http://localhost:${data.port}`;
+        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
+            link = `http://localhost:${port}`;
+        } else if (lanIPs.includes(host)) {
+            link = `http://${host}:${port}`;
         } else {
-            link = data.ngrokUrl.replace("https://", "wss://");
+            link = ngrokUrl.replace("https://", "wss://");
         }
+
         console.log(`transit page starting sockets at: ${link}`);
         startSockets(link);
     });
