@@ -1,5 +1,6 @@
 let socket; // Declare socket globally
 let betweenRounds = false;
+let roundStarted = false;
 
 const app = document.querySelector(".app");
 const fontSize = document.querySelector(".timer").style.fontSize;
@@ -27,6 +28,11 @@ function startSockets(link) {
     socket.on("timer-update", function (data) {
         updateTimer(data);
     });
+
+    socket.on("round-start", (data) => {
+        roundStarted = data.roundStarted;
+    });
+
 
     socket.on("round-end", () => {
         betweenRounds = true;
@@ -89,7 +95,7 @@ function updateTimer(data) {
     if (timerElement) {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
-        if (betweenRounds) {
+        if (betweenRounds && roundStarted) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
             timerElement.style.fontSize = "50vh";
             timerElement.style.color = "gray";

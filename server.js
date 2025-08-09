@@ -36,6 +36,7 @@ let remainingTime = 0;
 let remainingTurnoverTime = 0;
 let roundState = 0;
 let roundName = "";
+let startInStageTime = 0;
 
 // athlete list
 let athletes = {
@@ -120,7 +121,7 @@ app.get("/round-status", (req, res) => {
         groups: groups,
         roundSettings: roundSettings,
         remainingTime: remainingTime,
-        roundStarted
+        roundStarted: roundStarted
     });
 });
 // handles athlete data intake/deletion
@@ -182,6 +183,7 @@ io.on("connection", (socket) => {
         if (!roundStarted) {
             console.log(`timer started`);
             roundStarted = true;
+            io.emit("round-start", { roundStarted });
             betweenRounds = true;
             remainingTurnoverTime = 6;
             return runTurnoverTimer();
@@ -258,7 +260,14 @@ io.on("connection", (socket) => {
                 return;
             }
         }
-        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
+        io.emit("ondeck-update", {
+            roundName: roundName,
+            ondeck: ondeck,
+            roundState: (roundState + 1),
+            groups: groups,
+            remainingTime: remainingTime,
+            roundStarted: roundStarted
+        });
     });
 
     socket.on("change-timer-mode", (mode) => {
@@ -290,7 +299,9 @@ io.on("connection", (socket) => {
         roundState = 0;
         if (data.time) {
             remainingTime = data.time;
-            roundStarted = true;
+            startInStageTime = data.time;
+            roundStarted = false;
+            io.emit("round-start", { roundStarted });
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
             timerUpdateEmit(remainingTime);
@@ -304,6 +315,7 @@ function reset() {
     remainingTime = roundSettings.timerMode;
     betweenRounds = false;
     roundStarted = false;
+    io.emit("round-start", { roundStarted });
     clearAllIntervals();
     timerUpdateEmit();
     io.emit("settings-update", { roundSettings });
@@ -372,9 +384,15 @@ function runTurnoverTimer() {
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
             console.log("stage " + (roundState + 1) + " begin: " + groups[1] + "|" + groups[2] + "|" + groups[3]);
-            timerUpdateEmit(roundSettings.timerMode);
-            advanceRoundState();
-            remainingTime = roundSettings.timerMode;
+            if (startInStageTime != 0) {
+                remainingTime = startInStageTime;
+                timerUpdateEmit(remainingTime);
+                startInStageTime = 0;
+            } else {
+                timerUpdateEmit(roundSettings.timerMode);
+                remainingTime = roundSettings.timerMode;
+                advanceRoundState();
+            }
             runTimer();
         }
     }, 1000);
@@ -443,7 +461,9 @@ function selectRoundState(data) {
     }
 
     // check for timer set to begin directly in stage
-    if (data.time) { steps++ };
+    if (data.time) {
+        steps++;
+    };
 
     for (let step = 0; step < steps; step++) {
         advanceRoundState();

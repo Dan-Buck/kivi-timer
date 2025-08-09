@@ -8,6 +8,7 @@ let roundSettings = {
     zones: 0,
 }
 let betweenRounds = false;
+let roundStarted = false;
 
 // Function to start WebSocket connection
 function startSockets(link) {
@@ -16,18 +17,22 @@ function startSockets(link) {
     fetch("/round-status")
         .then((res) => res.json())
         .then((data) => {
-            updateTimer(data);
-            updateOndeck(data);
             if (data.betweenRounds || !data.roundStarted) {
                 roundEnd();
             } else {
                 roundBegin();
             }
+            updateTimer(data);
+            updateOndeck(data);
         });
 
     // Handle timer update
     socket.on("timer-update", (data) => {
         updateTimer(data)
+    });
+
+    socket.on("round-start", (data) => {
+        roundStarted = data.roundStarted;
     });
 
     // Handle ondeck update
@@ -99,7 +104,7 @@ function updateTimer(data) {
     if (timerElement) {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
-        if (betweenRounds) {
+        if (betweenRounds && roundStarted) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
         } else {
             timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;

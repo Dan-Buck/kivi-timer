@@ -1,5 +1,6 @@
 let socket;
 let betweenRounds = false;
+let roundStarted = false;
 
 // Get dynamic ngrok URL from server before attaching event listeners
 fetch("/connections")
@@ -46,6 +47,10 @@ function startSockets(link) {
         // Handle timer update
         socket.on("timer-update", (data) => {
             updateTimer(data);
+        });
+
+        socket.on("round-start", (data) => {
+            roundStarted = data.roundStarted;
         });
 
         socket.on("round-begin", () => {
@@ -358,7 +363,7 @@ function updateTimer(data) {
     if (timerElement) {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
-        if (betweenRounds) {
+        if (betweenRounds && roundStarted) {
             timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
         } else {
             timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
