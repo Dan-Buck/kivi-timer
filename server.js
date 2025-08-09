@@ -39,23 +39,23 @@ let roundName = "";
 
 // athlete list
 let athletes = {
-    "male": [],
-    "female": [],
-    "combined": [],
+    1: [],
+    2: [],
+    3: [],
 }
 
 // group name tracker
 let groups = {
-    "male": "",
-    "female": "",
-    "combined": "",
+    1: "",
+    2: "",
+    3: "",
 }
 
 // ondeck tracker
 let ondeck = {
-    "male": [],
-    "female": [],
-    "combined": [],
+    1: [],
+    2: [],
+    3: [],
 }
 
 // Setup session middleware
@@ -134,18 +134,21 @@ app.post("/athletes", (req, res) => {
         return res.status(400).json({ error: "Round started: first 'Reset Entire Round'" });
     }
 
-    const { athletes: receivedAthletes, category: receivedCategory, groupName: receivedGroupName } = req.body; // Expecting { athletes: [...] }
+    const { athletes: receivedAthletes, category: receivedCategory, groupName: receivedGroupName, groupNumber: groupDesig } = req.body; // Expecting { athletes: [...] }
+
+    // Expecting "group-1"
+    groupNumber = parseInt(groupDesig.split("-")[1], 10);
 
     if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.firstName && a.lastName)) {
         return res.status(400).json({ error: "Invalid athlete data format" });
     }
 
-    if (!athletes.hasOwnProperty(receivedCategory)) {
+    if (!athletes.hasOwnProperty(groupNumber)) {
         return res.status(400).json({ error: "Invalid category" });
     }
 
-    athletes[receivedCategory] = receivedAthletes; // Overwrite existing data
-    groups[receivedCategory] = receivedGroupName; // store group name by category
+    athletes[groupNumber] = receivedAthletes; // Overwrite existing data
+    groups[groupNumber] = receivedGroupName; // store group name by category
     res.status(200).json({ message: "Athlete data stored successfully" });
     console.log("athlete list received: " + receivedGroupName);
 });
@@ -375,9 +378,9 @@ function advanceRoundState() {
     roundState++;
     saveStateToFile(roundName, roundState, remainingTime);
     ondeck = {
-        "male": [],
-        "female": [],
-        "combined": [],
+        1: [],
+        2: [],
+        3: [],
     }
     if (roundState >= 0) {
         for (const category in athletes) {

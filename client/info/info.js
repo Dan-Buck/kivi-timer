@@ -120,8 +120,11 @@ function updateInfo(data) {
         if (groups[category].length === 0) continue;
         groupList.push(groups[category]);
     }
-
-    groupsDisplay.textContent = `${groupList.join(" & ")}`
+    if (groupList.length > 0) {
+        groupsDisplay.textContent = `${groupList.join(" & ")}`;
+    } else {
+        groupsDisplay.textContent = `${roundName}`;
+    }
 }
 
 function playSound(path) {

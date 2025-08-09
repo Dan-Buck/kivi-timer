@@ -195,6 +195,7 @@ function addEventListeners() {
                 }
                 const selectedCategory = categorySelect.value;
                 const groupNameText = groupName.value;
+                const groupNumber = group.id;
 
                 fetch("/athletes", {
                     method: "POST",
@@ -202,7 +203,8 @@ function addEventListeners() {
                     body: JSON.stringify({
                         category: selectedCategory,
                         athletes: parsedData,
-                        groupName: groupNameText
+                        groupName: groupNameText,
+                        groupNumber: groupNumber
                     })
                 })
                     .then(response => {
@@ -333,14 +335,13 @@ function updateInfo(data) {
         document.getElementById("next-climber").style.display = "block";
     }
 
+    // TODO fix this with category elim
     document.querySelectorAll(".upload-group").forEach((group, index) => {
-        const categorySelect = group.querySelector("select");
         const groupName = group.querySelector("input[type='text']");
 
         for (const key in groups) {
             if (groups[key]) {
                 groupName.value = groups[key];
-                categorySelect.value = key;
                 groups[key] = "";
             }
         }

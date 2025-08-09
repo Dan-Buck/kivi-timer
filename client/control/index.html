@@ -85,40 +85,46 @@
         </div>
 
         <div class="uploads-container">
-            <div class="upload-group">
+            <div class="upload-group" id="group-1">
                 <div class="display-name-group">
                     <label for="group-1-name">Group 1 Display Name:</label>
                     <input class="group-names" type="text" id="group-1-name" />
                 </div>
                 <input type="file" id="csv-upload-1" accept=".csv" />
-                <label for="athlete-category-select-1">Category:</label>
-                <select id="athlete-category-select-1">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="combined">Combined</option>
-                </select>
+                <!-- Gender category select hidden in CSS -->
+                <div class="gender-select-div">
+                    <label for="athlete-category-select-1">Category:</label>
+                    <select id="athlete-category-select-1">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="combined">Combined</option>
+                    </select>
+                </div>
                 <button id="upload-btn-1" class="upload-button">Upload CSV 1</button>
             </div>
 
-            <div class="upload-group">
+            <div class="upload-group" id="group-2">
                 <div class="display-name-group">
                     <label for="group-2-name">Group 2 Display Name:</label>
                     <input class="group-names" type="text" id="group-2-name" />
                 </div>
                 <input type="file" id="csv-upload-2" accept=".csv" />
-                <label for="athlete-category-select-2">Category:</label>
-                <select id="athlete-category-select-2">
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="combined">Combined</option>
-                </select>
+                <!-- Gender category select hidden in CSS -->
+                <div class="gender-select-div">
+                    <label for="athlete-category-select-2">Category:</label>
+                    <select id="athlete-category-select-2">
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                        <option value="combined">Combined</option>
+                    </select>
+                </div>
                 <button id="upload-btn-2" class="upload-button">Upload CSV 2</button>
             </div>
 
         </div>
 
         <div class="extra-buttons">
-            <button id="upload-delete" class="delete-button">Clear Athlete Data</button>
+            <button id="upload-delete" class="delete-button">Clear Group Data</button>
             <button id="open-modal-btn" class="roundstate-button">Change Round State</button>
             <button id="reset-round">Reset Entire Round</button>
         </div>

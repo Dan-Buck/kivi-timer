@@ -222,6 +222,11 @@ input[type="text"] {
     display: table;
 }
 
+/* hide gender category select for now */
+.gender-select-div {
+    display: none;
+}
+
 .upload-group select {
     flex-grow: 1;
     min-width: 120px;
