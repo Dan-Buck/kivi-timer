@@ -216,6 +216,8 @@ io.on("connection", (socket) => {
     socket.on("next-climber", () => {
         console.log("next climber: timer paused, round advanced");
         reset();
+        // spoof roundstate + 1 for screens
+        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
     });
 
     socket.on("round-name-update", (newRoundName) => {
