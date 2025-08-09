@@ -1,13 +1,12 @@
 let socket; // Declare socket globally
+let betweenRounds = false;
+
+const app = document.querySelector(".app");
+const fontSize = document.querySelector(".timer").style.fontSize;
+const fontWeight = document.querySelector(".timer").style.fontWeight;
 
 // Function to handle starting sockets
 function startSockets(link) {
-    const app = document.querySelector(".app");
-    const fontSize = document.querySelector(".timer").style.fontSize;
-    const fontWeight = document.querySelector(".timer").style.fontWeight;
-    let betweenRounds = false;
-
-
     socket = io(link, {
         reconnection: false, // Disable auto-reconnection
     });
@@ -15,40 +14,18 @@ function startSockets(link) {
     fetch("/round-status")
         .then((res) => res.json())
         .then((data) => {
-            updateInfo(data);
             if (data.betweenRounds) {
                 betweenRounds = true;
             } else {
                 betweenRounds = false;
             }
+            updateTimer(data);
+            updateInfo(data);
         });
 
     // Handle timer update from server
     socket.on("timer-update", function (data) {
-        const time = data.remainingTime;
-        const timerElement = document.querySelector(".timer");
-        if (timerElement) {
-            const minutes = Math.floor(time / 60);
-            const seconds = Math.floor(time % 60);
-            if (betweenRounds) {
-                timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-                timerElement.style.fontSize = "50vh";
-                timerElement.style.color = "gray";
-                timerElement.style.fontWeight = 600;
-
-            } else {
-                timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-                timerElement.style.fontSize = fontSize;
-                timerElement.style.color = "black";
-                timerElement.style.fontWeight = fontWeight;
-
-            }
-        }
-        if (time === 5) {
-            playSound("/static/sounds/5beeps-boop.mp3");
-        } else if (time === 60) {
-            playSound("/static/sounds/beep.mp3");
-        }
+        updateTimer(data);
     });
 
     socket.on("round-end", () => {
@@ -66,7 +43,7 @@ function startSockets(link) {
 
 // Bind event listeners directly
 document.querySelector(".timer-overlay").addEventListener("click", () => {
-    document.getElementById("auth-modal").style.display = "block";
+    //document.getElementById("auth-modal").style.display = "block";
 });
 
 document.getElementById("enableSound").addEventListener("click", () => {
@@ -106,13 +83,40 @@ fetch("/connections")
 
 let audioContext;
 
+function updateTimer(data) {
+    const time = data.remainingTime;
+    const timerElement = document.querySelector(".timer");
+    if (timerElement) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        if (betweenRounds) {
+            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.fontSize = "50vh";
+            timerElement.style.color = "gray";
+            timerElement.style.fontWeight = 600;
+
+        } else {
+            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.fontSize = fontSize;
+            timerElement.style.color = "black";
+            timerElement.style.fontWeight = fontWeight;
+
+        }
+    }
+    if (time === 5) {
+        playSound("/static/sounds/5beeps-boop.mp3");
+    } else if (time === 60) {
+        playSound("/static/sounds/beep.mp3");
+    }
+}
+
 function updateInfo(data) {
     const groups = data.groups;
     const roundState = data.roundState;
     const roundName = data.roundName;
 
     const stageDisplay = document.querySelector(".stage-display");
-    const groupsDisplay = document.querySelector(".groups-display")
+    const groupsDisplay = document.querySelector(".groups-display");
     stageDisplay.textContent = `Stage # ${roundState}`;
 
     let groupList = [];

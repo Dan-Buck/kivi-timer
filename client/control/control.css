@@ -82,6 +82,11 @@ button {
     color: #ccc;
 }
 
+#add-groups {
+    background-color: gray;
+    color: #1e1e2f;
+}
+
 /* Button Hover & Tap Effects */
 button:hover {
     filter: brightness(1.2);
@@ -193,9 +198,9 @@ input[type="text"] {
 
 
 
-/* Container for the upload groups */
+/* Container for the upload groups, hide by default */
 .uploads-container {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     /* Allows the groups to wrap if necessary on smaller screens */
     gap: 20px;
@@ -243,6 +248,7 @@ input[type="text"] {
 
 /* Clear athlete data button */
 #upload-delete {
+    display: none;
     background-color: #ff9e43;
     color: white;
 }
@@ -255,6 +261,7 @@ input[type="text"] {
 #reset-round {
     background-color: #dc3546;
     color: white;
+    height: 100%;
 }
 
 .delete-button:hover {

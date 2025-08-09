@@ -29,6 +29,7 @@ function startSockets(link) {
         fetch("/round-status")
             .then((res) => res.json())
             .then((data) => {
+                updateTimer(data);
                 updateInfo(data);
                 if (data.betweenRounds) {
                     betweenRounds = true;
@@ -44,17 +45,7 @@ function startSockets(link) {
 
         // Handle timer update
         socket.on("timer-update", (data) => {
-            const time = data.remainingTime;
-            const timerElement = document.querySelector(".timer");
-            if (timerElement) {
-                const minutes = Math.floor(time / 60);
-                const seconds = Math.floor(time % 60);
-                if (betweenRounds) {
-                    timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
-                } else {
-                    timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-                }
-            }
+            updateTimer(data);
         });
 
         socket.on("round-begin", () => {
@@ -143,7 +134,7 @@ function addEventListeners() {
     document.getElementById("zone-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
         socket.emit("change-zone-number", parseInt(selectedValue, 10));
-    })
+    });
 
     document.getElementById("finals-mode-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
@@ -154,17 +145,24 @@ function addEventListeners() {
             document.getElementById("next-climber").style.display = "block";
         }
         socket.emit("change-finals-mode", selectedValue);
-    })
+    });
+
+    document.getElementById("add-groups").addEventListener("click", (event) => {
+        event.target.style.display = "none";
+        document.querySelector(".uploads-container").style.display = "flex";
+        document.getElementById("upload-delete").style.display = "block";
+    });
 
     document.querySelectorAll(".upload-group").forEach((group, index) => {
         const fileInput = group.querySelector("input[type='file']");
         const categorySelect = group.querySelector("select");
         const uploadBtn = group.querySelector(".upload-button");
         const groupName = group.querySelector("input[type='text']");
+        const groupDesig = group.id;
 
         groupName.addEventListener("input", (event) => {
             const newGroupName = event.target.value;
-            socket.emit("group-name-update", { newGroupName: newGroupName, category: categorySelect.value });
+            socket.emit("group-name-update", { newGroupName: newGroupName, groupDesig });
         });
 
         categorySelect.addEventListener("change", (event => {
@@ -195,7 +193,6 @@ function addEventListeners() {
                 }
                 const selectedCategory = categorySelect.value;
                 const groupNameText = groupName.value;
-                const groupNumber = group.id;
 
                 fetch("/athletes", {
                     method: "POST",
@@ -204,7 +201,7 @@ function addEventListeners() {
                         category: selectedCategory,
                         athletes: parsedData,
                         groupName: groupNameText,
-                        groupNumber: groupNumber
+                        groupNumber: groupDesig
                     })
                 })
                     .then(response => {
@@ -248,6 +245,9 @@ function addEventListeners() {
                     console.error("Error deleting athlete data:", error);
                     alert("Delete not successful, please try again.");
                 });
+            document.querySelector(".uploads-container").style.display = "none";
+            document.getElementById("add-groups").style.display = "block";
+            document.getElementById("upload-delete").style.display = "none";
         } else {
             console.log("Data clear canceled.");
         }
@@ -335,7 +335,7 @@ function updateInfo(data) {
         document.getElementById("next-climber").style.display = "block";
     }
 
-    // TODO fix this with category elim
+    // populate group names, show uploads container, delete button
     document.querySelectorAll(".upload-group").forEach((group, index) => {
         const groupName = group.querySelector("input[type='text']");
 
@@ -343,10 +343,27 @@ function updateInfo(data) {
             if (groups[key]) {
                 groupName.value = groups[key];
                 groups[key] = "";
+                document.querySelector(".uploads-container").style.display = "flex";
+                document.getElementById("add-groups").style.display = "none";
+                document.getElementById("upload-delete").style.display = "block";
             }
         }
     });
 
+}
+
+function updateTimer(data) {
+    const time = data.remainingTime;
+    const timerElement = document.querySelector(".timer");
+    if (timerElement) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        if (betweenRounds) {
+            timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
+        } else {
+            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        }
+    }
 }
 
 // takes user's athletes.csv and converts to json for POST to server

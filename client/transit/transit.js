@@ -16,8 +16,9 @@ function startSockets(link) {
     fetch("/round-status")
         .then((res) => res.json())
         .then((data) => {
+            updateTimer(data);
             updateOndeck(data);
-            if (data.betweenRounds) {
+            if (data.betweenRounds || !data.roundStarted) {
                 roundEnd();
             } else {
                 roundBegin();
@@ -26,17 +27,7 @@ function startSockets(link) {
 
     // Handle timer update
     socket.on("timer-update", (data) => {
-        const time = data.remainingTime;
-        const timerElement = document.querySelector(".timer");
-        if (timerElement) {
-            const minutes = Math.floor(time / 60);
-            const seconds = Math.floor(time % 60);
-            if (betweenRounds) {
-                timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-            } else {
-                timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-            }
-        }
+        updateTimer(data)
     });
 
     // Handle ondeck update
@@ -69,6 +60,8 @@ function updateOndeck(data) {
     const container = document.querySelector(".ondeck-container");
     for (const category in ondeck) {
         let categoryLabel = document.querySelector(`.ondeck-label-${category}`);
+        let categoryContainer = document.querySelector(`.ondeck-${category}`);
+
         if (!categoryLabel) {
             categoryLabel = document.createElement("h2")
             categoryLabel.classList.add(`ondeck-label-${category}`)
@@ -77,12 +70,12 @@ function updateOndeck(data) {
         // create all the category labels but don't show emptys
         if (groups[category].length === 0) {
             categoryLabel.style.display = "none";
+            if (categoryContainer) { categoryContainer.innerHTML = "" };
             continue
         };
         categoryLabel.style.display = "block";
         categoryLabel.textContent = `${groups[category]} - Stage # ${roundState}`;
 
-        let categoryContainer = document.querySelector(`.ondeck-${category}`);
         if (!categoryContainer) {
             categoryContainer = document.createElement("div");
             categoryContainer.classList.add(`ondeck-${category}`, "ondeck-boulders");
@@ -90,12 +83,27 @@ function updateOndeck(data) {
         }
 
         categoryContainer.innerHTML = ""; // Clear existing content
+
         ondeck[category].forEach(({ boulder, athlete }) => {
             const entry = document.createElement("div");
             entry.classList.add("ondeck-entry");
             entry.innerHTML = `<u>Boulder ${boulder}</u><br>${athlete ? `${athlete.id}<br>${athlete.lastName}` : "-"}`;
             categoryContainer.appendChild(entry);
         });
+    }
+}
+
+function updateTimer(data) {
+    const time = data.remainingTime;
+    const timerElement = document.querySelector(".timer");
+    if (timerElement) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        if (betweenRounds) {
+            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+        } else {
+            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        }
     }
 }
 

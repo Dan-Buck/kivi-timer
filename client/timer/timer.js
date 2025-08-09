@@ -1,43 +1,31 @@
 let socket; // Declare socket globally
+const app = document.querySelector(".app");
+const fontSize = document.querySelector(".timer").style.fontSize;
+const fontWeight = document.querySelector(".timer").style.fontWeight;
+let betweenRounds = false;
+
 
 // Function to handle starting sockets
 function startSockets(link) {
-    const app = document.querySelector(".app");
-    const fontSize = document.querySelector(".timer").style.fontSize;
-    const fontWeight = document.querySelector(".timer").style.fontWeight;
-    let betweenRounds = false;
-
-
     socket = io(link, {
         reconnection: false, // Disable auto-reconnection
     });
 
+    fetch("/round-status")
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.betweenRounds) {
+                betweenRounds = true;
+            } else {
+                betweenRounds = false;
+            }
+            updateTimer(data);
+        });
+
+
     // Handle timer update from server
     socket.on("timer-update", function (data) {
-        const time = data.remainingTime;
-        const timerElement = document.querySelector(".timer");
-        if (timerElement) {
-            const minutes = Math.floor(time / 60);
-            const seconds = Math.floor(time % 60);
-            if (betweenRounds) {
-                timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-                timerElement.style.fontSize = "50vh";
-                timerElement.style.color = "gray";
-                timerElement.style.fontWeight = 600;
-
-            } else {
-                timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-                timerElement.style.fontSize = fontSize;
-                timerElement.style.color = "black";
-                timerElement.style.fontWeight = fontWeight;
-
-            }
-        }
-        if (time === 5) {
-            playSound("/static/sounds/5beeps-boop.mp3");
-        } else if (time === 60) {
-            playSound("/static/sounds/beep.mp3");
-        }
+        updateTimer(data);
     });
 
     socket.on("round-end", () => {
@@ -140,4 +128,31 @@ function playAudioBuffer(path) {
             source.start(0);
         })
         .catch(err => console.warn("Error playing sound:", err));
+}
+
+function updateTimer(data) {
+    const time = data.remainingTime;
+    const timerElement = document.querySelector(".timer");
+    if (timerElement) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        if (betweenRounds) {
+            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.fontSize = "50vh";
+            timerElement.style.color = "gray";
+            timerElement.style.fontWeight = 600;
+
+        } else {
+            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.fontSize = fontSize;
+            timerElement.style.color = "black";
+            timerElement.style.fontWeight = fontWeight;
+
+        }
+    }
+    if (time === 5) {
+        playSound("/static/sounds/5beeps-boop.mp3");
+    } else if (time === 60) {
+        playSound("/static/sounds/beep.mp3");
+    }
 }

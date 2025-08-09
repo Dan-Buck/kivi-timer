@@ -118,7 +118,9 @@ app.get("/round-status", (req, res) => {
         betweenRounds: betweenRounds,
         ondeck: ondeck,
         groups: groups,
-        roundSettings: roundSettings
+        roundSettings: roundSettings,
+        remainingTime: remainingTime,
+        roundStarted
     });
 });
 // handles athlete data intake/deletion
@@ -140,15 +142,18 @@ app.post("/athletes", (req, res) => {
     groupNumber = parseInt(groupDesig.split("-")[1], 10);
 
     if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.firstName && a.lastName)) {
+        console.log(`bad upload array: ${groupNumber}`);
         return res.status(400).json({ error: "Invalid athlete data format" });
     }
 
     if (!athletes.hasOwnProperty(groupNumber)) {
+        console.log(`bad upload index: ${groupNumber}`);
         return res.status(400).json({ error: "Invalid category" });
     }
 
     athletes[groupNumber] = receivedAthletes; // Overwrite existing data
-    groups[groupNumber] = receivedGroupName; // store group name by category
+    groups[groupNumber] = receivedGroupName; // store group name
+    console.log(`groups: ${groups[groupNumber]}`);
     res.status(200).json({ message: "Athlete data stored successfully" });
     console.log("athlete list received: " + receivedGroupName);
 });
@@ -217,7 +222,8 @@ io.on("connection", (socket) => {
     });
 
     socket.on("group-name-update", (data) => {
-        groups[data.category] = data.newGroupName;
+        groupNumber = parseInt(data.groupDesig.split("-")[1], 10);
+        groups[groupNumber] = data.newGroupName;
     });
 
     socket.on("group-category-change", (data) => {
@@ -306,20 +312,21 @@ function reset() {
 
 function clearData() {
     athletes = {
-        "male": [],
-        "female": [],
-        "combined": []
+        1: [],
+        2: [],
+        3: []
     };
     groups = {
-        "male": "",
-        "female": "",
-        "combined": "",
+        1: "",
+        2: "",
+        3: "",
     };
     ondeck = {
-        "male": [],
-        "female": [],
-        "combined": [],
+        1: [],
+        2: [],
+        3: [],
     }
+    io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
 }
 
 function clearAllIntervals() {
@@ -364,7 +371,7 @@ function runTurnoverTimer() {
             clearInterval(turnoverInterval)
             betweenRounds = false;
             io.emit("round-begin", { groupName: groups, roundState: roundState });
-            console.log("stage " + (roundState + 1) + " begin: " + groups.male + "|" + groups.female + "|" + groups.combined);
+            console.log("stage " + (roundState + 1) + " begin: " + groups[1] + "|" + groups[2] + "|" + groups[3]);
             timerUpdateEmit(roundSettings.timerMode);
             advanceRoundState();
             remainingTime = roundSettings.timerMode;
