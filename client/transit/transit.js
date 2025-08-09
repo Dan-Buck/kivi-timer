@@ -80,7 +80,7 @@ function updateOndeck(data) {
             continue
         };
         categoryLabel.style.display = "block";
-        categoryLabel.textContent = `${roundName} - ${groups[category]} - Stage # ${roundState}`;
+        categoryLabel.textContent = `${groups[category]} - Stage # ${roundState}`;
 
         let categoryContainer = document.querySelector(`.ondeck-${category}`);
         if (!categoryContainer) {

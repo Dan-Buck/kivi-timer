@@ -112,7 +112,14 @@ app.get("/connections", (req, res) => {
 
 // API for round status requests from new connections
 app.get("/round-status", (req, res) => {
-    res.json({ roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups, betweenRounds: betweenRounds });
+    res.json({
+        roundName: roundName,
+        roundState: roundState,
+        betweenRounds: betweenRounds,
+        ondeck: ondeck,
+        groups: groups,
+        roundSettings: roundSettings
+    });
 });
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
@@ -210,6 +217,26 @@ io.on("connection", (socket) => {
         groups[data.category] = data.newGroupName;
     });
 
+    socket.on("group-category-change", (data) => {
+        if (!data.groupName) { return };
+        selectedCategory = data.selectedCategory;
+        groupName = data.groupName;
+        // TODO: figure out how to handle this with client-side protections against group wiping (or do away with categories)
+        /*for (const category in groups) {
+            if (groups[category] == groupName) {
+                groups[category] = "";
+                groups[selectedCategory] = groupName;
+                ondeck[selectedCategory] = ondeck[category];
+                ondeck[category] = "";
+                athletes[selectedCategory] = athletes[category];
+                athletes[category] = "";
+                console.log(`category change: ${groupName} from ${category} to ${selectedCategory}`);
+            }
+        }
+        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
+        */
+    });
+
     socket.on("reset-round", () => {
         console.log("round reset");
         roundState = 0;
@@ -222,6 +249,7 @@ io.on("connection", (socket) => {
                 return;
             }
         }
+        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
     });
 
     socket.on("change-timer-mode", (mode) => {

@@ -24,6 +24,8 @@ fetch("/connections")
 function startSockets(link) {
     return new Promise((resolve) => {
         socket = io(link, { reconnection: false }); // Assign to global variable
+
+        //check for existing server info and update page
         fetch("/round-status")
             .then((res) => res.json())
             .then((data) => {
@@ -145,6 +147,12 @@ function addEventListeners() {
 
     document.getElementById("finals-mode-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
+        // show "Next Climber button"
+        if (selectedValue == "false") {
+            document.getElementById("next-climber").style.display = "none";
+        } else {
+            document.getElementById("next-climber").style.display = "block";
+        }
         socket.emit("change-finals-mode", selectedValue);
     })
 
@@ -158,6 +166,11 @@ function addEventListeners() {
             const newGroupName = event.target.value;
             socket.emit("group-name-update", { newGroupName: newGroupName, category: categorySelect.value });
         });
+
+        categorySelect.addEventListener("change", (event => {
+            const selectedValue = event.target.value;
+            socket.emit("group-category-change", { groupName: groupName.value, selectedCategory: selectedValue });
+        }))
 
         uploadBtn.addEventListener("click", () => {
             if (fileInput.files.length === 0) {
@@ -295,11 +308,44 @@ function addEventListeners() {
 function updateInfo(data) {
     const roundState = data.roundState;
     const roundName = data.roundName;
+    const groups = data.groups;
+    const roundSettings = data.roundSettings;
 
     const stageDisplay = document.querySelector(".stage-display");
     stageDisplay.textContent = `#${roundState}`;
+
     const roundNameDisplay = document.getElementById("round-name")
     roundNameDisplay.value = roundName;
+
+    const timerMode = document.getElementById("timer-select");
+    const boulderNumbers = document.getElementById("boulder-select");
+    const zoneNumbers = document.getElementById("zone-select");
+    const finalsMode = document.getElementById("finals-mode-select");
+    timerMode.value = roundSettings.timerMode;
+    boulderNumbers.value = roundSettings.boulders;
+    zoneNumbers.value = roundSettings.zones;
+    finalsMode.value = roundSettings.finalsMode;
+
+    // whether to show "Next Climber button"
+    if (finalsMode.value == "false") {
+        document.getElementById("next-climber").style.display = "none";
+    } else {
+        document.getElementById("next-climber").style.display = "block";
+    }
+
+    document.querySelectorAll(".upload-group").forEach((group, index) => {
+        const categorySelect = group.querySelector("select");
+        const groupName = group.querySelector("input[type='text']");
+
+        for (const key in groups) {
+            if (groups[key]) {
+                groupName.value = groups[key];
+                categorySelect.value = key;
+                groups[key] = "";
+            }
+        }
+    });
+
 }
 
 // takes user's athletes.csv and converts to json for POST to server
