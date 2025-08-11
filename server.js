@@ -16,6 +16,7 @@ const ngrok = require("ngrok");
 const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
+const { playSound } = require("./helpers/serverSound");
 const { on } = require("events");
 const { emit } = require("process");
 const { time } = require("console");
@@ -485,6 +486,8 @@ function timerUpdateEmit(time) {
     }
 
     io.emit("timer-update", { remainingTime: time });
+    // play sound out of the server as well
+    playSound(time);
 
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);

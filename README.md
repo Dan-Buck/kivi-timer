@@ -22,6 +22,10 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
    ```sh
    npm install
    ```
+   If you want to play sound directly from the server, make sure you have installed a suitable player, e.g.
+   ```sh
+   sudo apt install mpg123
+   ```
 
 3. Create a `.env` file in the project root with the following variables:
    ```env
