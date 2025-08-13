@@ -43,16 +43,4 @@ function playSoundFile(file) {
     });
 }
 
-const soundMap = {
-    5: 'client/static/sounds/5beeps-boop.mp3',
-    60: 'client/static/sounds/beep.mp3'
-};
-
-function playSound(time) {
-    const file = soundMap[time];
-    if (file) {
-        playSoundFile(file);
-    }
-}
-
-module.exports = { playSound };
+module.exports = { playSoundFile };

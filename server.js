@@ -16,7 +16,7 @@ const ngrok = require("ngrok");
 const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
-const { playSound } = require("./helpers/serverSound");
+const { playSoundFile } = require("./helpers/serverSound");
 const { on } = require("events");
 const { emit } = require("process");
 const { time } = require("console");
@@ -28,6 +28,7 @@ const controlKey = settings.controlKey;
 const ngrokAuth = settings.ngrok.authtoken;
 const ngrokHost = settings.ngrok.hostname;
 const tunnelAuth = settings.ngrok.tunnelAuth;
+const soundMap = settings.soundMap;
 let roundSettings = settings.roundSettings;
 let ngrokUrl = ""; // Store the generated ngrok URL
 
@@ -478,7 +479,7 @@ function selectRoundState(data) {
 }
 
 let writeErrorFlag;
-// emits timer update plus writes to txt
+// emits timer update, writes to txt, plays sound
 function timerUpdateEmit(time) {
     if (!time) {
         io.emit("timer-update", { remainingTime });
@@ -486,8 +487,12 @@ function timerUpdateEmit(time) {
     }
 
     io.emit("timer-update", { remainingTime: time });
-    // play sound out of the server as well
-    playSound(time);
+
+    // play sound out of the server at configured times
+    const file = soundMap[time];
+    if (file) {
+        playSoundFile(file);
+    }
 
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);

@@ -13,5 +13,10 @@ module.exports = {
         turnover: 15,
         boulders: 5,
         zones: 0,
+    },
+    // times and sound files to play
+    soundMap: {
+        5: 'client/static/sounds/5beeps-boop.mp3',
+        60: 'client/static/sounds/beep.mp3'
     }
 }
