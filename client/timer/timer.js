@@ -8,7 +8,10 @@ let roundStarted = false;
 // Function to handle starting sockets
 function startSockets(link) {
     socket = io(link, {
-        reconnection: false, // Disable auto-reconnection
+        reconnection: true,         // enable auto reconnect
+        reconnectionAttempts: Infinity, // retry forever
+        reconnectionDelay: 1000,    // start at 1s
+        reconnectionDelayMax: 5000, // cap at 5s
     });
 
     fetch("/round-status")

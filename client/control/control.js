@@ -24,7 +24,12 @@ fetch("/connections")
 // WebSocket setup function (returns a Promise)
 function startSockets(link) {
     return new Promise((resolve) => {
-        socket = io(link, { reconnection: false }); // Assign to global variable
+        socket = io(link, {
+            reconnection: true,         // enable auto reconnect
+            reconnectionAttempts: Infinity, // retry forever
+            reconnectionDelay: 1000,    // start at 1s
+            reconnectionDelayMax: 5000, // cap at 5s
+        });
 
         //check for existing server info and update page
         fetch("/round-status")

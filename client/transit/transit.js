@@ -12,7 +12,12 @@ let roundStarted = false;
 
 // Function to start WebSocket connection
 function startSockets(link) {
-    socket = io(link, { reconnection: false });
+    socket = io(link, {
+        reconnection: true,         // enable auto reconnect
+        reconnectionAttempts: Infinity, // retry forever
+        reconnectionDelay: 1000,    // start at 1s
+        reconnectionDelayMax: 5000, // cap at 5s
+    });
 
     fetch("/round-status")
         .then((res) => res.json())
