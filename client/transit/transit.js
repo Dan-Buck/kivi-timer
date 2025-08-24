@@ -77,7 +77,12 @@ function updateOndeck(data) {
             categoryLabel.classList.add(`ondeck-label-${category}`)
             container.appendChild(categoryLabel);
         }
-        // create all the category labels but don't show emptys
+        if (!categoryContainer) {
+            categoryContainer = document.createElement("div");
+            categoryContainer.classList.add(`ondeck-${category}`, "ondeck-boulders");
+            container.appendChild(categoryContainer);
+        }
+        // create all the category labels but hide emptys
         if (groups[category].length === 0) {
             categoryLabel.style.display = "none";
             if (categoryContainer) { categoryContainer.innerHTML = "" };
@@ -86,11 +91,7 @@ function updateOndeck(data) {
         categoryLabel.style.display = "block";
         categoryLabel.textContent = `${groups[category]} - Stage # ${roundState}`;
 
-        if (!categoryContainer) {
-            categoryContainer = document.createElement("div");
-            categoryContainer.classList.add(`ondeck-${category}`, "ondeck-boulders");
-            container.appendChild(categoryContainer);
-        }
+
 
         categoryContainer.innerHTML = ""; // Clear existing content
 

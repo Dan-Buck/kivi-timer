@@ -269,8 +269,11 @@ function addEventListeners() {
     const closeModalBtn = document.querySelector(".close");
     const roundStateForm = document.getElementById("round-state-form");
 
-    // Open modal when button is clicked
+    // Open modal when button is clicked, wipe existing values
     openModalBtn.addEventListener("click", () => {
+        modal.querySelectorAll("input").forEach((input, index) => {
+            input.value = null;
+        });
         modal.style.display = "flex";
     });
 

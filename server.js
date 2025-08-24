@@ -261,7 +261,7 @@ io.on("connection", (socket) => {
             if (groups[category].length > 0) {
                 roundState = -1;
                 advanceRoundState();
-                return;
+                break;
             }
         }
         io.emit("ondeck-update", {
@@ -321,7 +321,7 @@ function reset() {
     roundStarted = false;
     io.emit("round-start", { roundStarted });
     clearAllIntervals();
-    timerUpdateEmit();
+    timerUpdateEmit(remainingTime);
     io.emit("settings-update", { roundSettings });
     io.emit("round-end");
 }
@@ -359,6 +359,7 @@ function runTimer() {
             remainingTime--;
             timerUpdateEmit(remainingTime);
         } else {
+            // 2 min observation setting has no turnover time per request
             if (roundSettings.timerMode === 120) {
                 remainingTime = roundSettings.timerMode;
                 return runTimer();
@@ -393,9 +394,10 @@ function runTurnoverTimer() {
                 timerUpdateEmit(remainingTime);
                 startInStageTime = 0;
             } else {
-                timerUpdateEmit(roundSettings.timerMode);
                 remainingTime = roundSettings.timerMode;
+                timerUpdateEmit(remainingTime);
                 advanceRoundState();
+                io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
             }
             runTimer();
         }
@@ -428,7 +430,6 @@ function advanceRoundState() {
             }
         }
     }
-    io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
 }
 
 // advances roundstate to place a climber on a specific boulder
@@ -439,6 +440,7 @@ function selectRoundState(data) {
             console.log(`setting round stage to ${data.stage}`);
             roundState = data.stage - 2;
             advanceRoundState();
+            io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
             return;
         }
         console.log(`advancing ${data.stage} steps`);
@@ -475,6 +477,8 @@ function selectRoundState(data) {
     // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
     if (!data.time) {
         io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
+    } else {
+        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
     }
 }
 
@@ -497,9 +501,15 @@ function timerUpdateEmit(time) {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    let writeString;
+    if (betweenRounds) {
+        writeString = `transit${roundState + 1}/${formattedTime}`;
+    } else {
+        writeString = `stage${roundState}/${formattedTime}`
+    }
     const filePath = path.join(__dirname, "misc/timer.txt");
 
-    fsp.writeFile(filePath, formattedTime, "utf-8").catch(err => {
+    fsp.writeFile(filePath, writeString, "utf-8").catch(err => {
         if (!writeErrorFlag) {
             console.error("Timer file write failed:", err.message);
             writeErrorFlag = true;
