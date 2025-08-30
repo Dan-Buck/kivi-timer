@@ -1,3 +1,5 @@
+import { playSound } from "../helpers/audio.js";
+
 let socket; // Declare socket globally
 let betweenRounds = false;
 let roundStarted = false;
@@ -47,6 +49,10 @@ function startSockets(link) {
 
     socket.on("ondeck-update", (data) => {
         updateInfo(data);
+    });
+
+    socket.on("play-sound", (data) => {
+        playSound(data.path);
     });
 }
 
@@ -112,11 +118,6 @@ function updateTimer(data) {
 
         }
     }
-    if (time === 5) {
-        playSound("/static/sounds/5beeps-boop.mp3");
-    } else if (time === 60) {
-        playSound("/static/sounds/beep.mp3");
-    }
 }
 
 function updateInfo(data) {
@@ -140,30 +141,3 @@ function updateInfo(data) {
     }
 }
 
-function playSound(path) {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    if (audioContext.state === "suspended") {
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed!");
-            playAudioBuffer(path);
-        });
-    } else {
-        playAudioBuffer(path);
-    }
-}
-
-function playAudioBuffer(path) {
-    fetch(path)
-        .then(response => response.arrayBuffer())
-        .then(data => audioContext.decodeAudioData(data))
-        .then(buffer => {
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-        })
-        .catch(err => console.warn("Error playing sound:", err));
-}

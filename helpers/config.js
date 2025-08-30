@@ -16,7 +16,7 @@ module.exports = {
     },
     // times and sound files to play
     soundMap: {
-        5: 'client/static/sounds/5beeps-boop.mp3',
-        60: 'client/static/sounds/beep.mp3'
-    }
+        5: '/static/sounds/5beeps-boop.mp3',
+        60: '/static/sounds/beep.mp3'
+    },
 }

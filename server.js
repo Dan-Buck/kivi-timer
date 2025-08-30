@@ -492,10 +492,15 @@ function timerUpdateEmit(time) {
 
     io.emit("timer-update", { remainingTime: time });
 
-    // play sound out of the server at configured times
+    // play sound out of the server, and emit to clients at configured times
     const file = soundMap[time];
     if (file) {
-        playSoundFile(file);
+        // For server-side playback, you still need the filesystem path
+        const localPath = path.join(__dirname, "client", file);
+        playSoundFile(localPath);
+
+        // Emit the public path directly
+        io.emit("play-sound", { path: file });
     }
 
     const minutes = Math.floor(time / 60);

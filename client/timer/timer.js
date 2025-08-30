@@ -1,3 +1,5 @@
+import { playSound } from "../helpers/audio.js";
+
 let socket; // Declare socket globally
 const app = document.querySelector(".app");
 const fontSize = document.querySelector(".timer").style.fontSize;
@@ -41,6 +43,10 @@ function startSockets(link) {
 
     socket.on("round-begin", () => {
         betweenRounds = false;
+    });
+
+    socket.on("play-sound", (data) => {
+        playSound(data.path);
     });
 }
 
@@ -107,36 +113,6 @@ fetch("/connections")
         startSockets(link); // Start the WebSocket connection
     });
 
-let audioContext;
-
-function playSound(path) {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    if (audioContext.state === "suspended") {
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed!");
-            playAudioBuffer(path);
-        });
-    } else {
-        playAudioBuffer(path);
-    }
-}
-
-function playAudioBuffer(path) {
-    fetch(path)
-        .then(response => response.arrayBuffer())
-        .then(data => audioContext.decodeAudioData(data))
-        .then(buffer => {
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-        })
-        .catch(err => console.warn("Error playing sound:", err));
-}
-
 function updateTimer(data) {
     const time = data.remainingTime;
     const timerElement = document.querySelector(".timer");
@@ -156,10 +132,5 @@ function updateTimer(data) {
             timerElement.style.fontWeight = fontWeight;
 
         }
-    }
-    if (time === 5) {
-        playSound("/static/sounds/5beeps-boop.mp3");
-    } else if (time === 60) {
-        playSound("/static/sounds/beep.mp3");
     }
 }
