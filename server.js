@@ -39,6 +39,7 @@ let remainingTurnoverTime = 0;
 let roundState = 0;
 let roundName = "";
 let startInStageTime = 0;
+let nextClimberFlag = false; // for finalsMode
 
 // athlete list
 let athletes = {
@@ -199,6 +200,13 @@ io.on("connection", (socket) => {
             runTurnoverTimer();
         } else {
             console.log("resuming timer");
+            playSound(soundMap[60]);
+            if (roundSettings.finalsMode && nextClimberFlag) {
+                nextClimberFlag = false;
+                advanceRoundState();
+                io.emit("round-begin");
+                io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
+            }
             runTimer();
         }
     });
@@ -218,8 +226,18 @@ io.on("connection", (socket) => {
     socket.on("next-climber", () => {
         console.log("next climber: timer paused, round advanced");
         reset();
-        // spoof roundstate + 1 for screens
-        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
+        roundStarted = true;
+        io.emit("round-end");
+        nextClimberFlag = true;
+        // spoof roundState +1 for screens
+        io.emit("ondeck-update", {
+            roundName: roundName,
+            ondeck: ondeck,
+            roundState: (roundState + 1),
+            groups: groups,
+            remainingTime: remainingTime,
+            roundStarted: roundStarted
+        });
     });
 
     socket.on("round-name-update", (newRoundName) => {
@@ -495,12 +513,7 @@ function timerUpdateEmit(time) {
     // play sound out of the server, and emit to clients at configured times
     const file = soundMap[time];
     if (file) {
-        // For server-side playback, you still need the filesystem path
-        const localPath = path.join(__dirname, "client", file);
-        playSoundFile(localPath);
-
-        // Emit the public path directly
-        io.emit("play-sound", { path: file });
+        playSound(file);
     }
 
     const minutes = Math.floor(time / 60);
@@ -520,6 +533,15 @@ function timerUpdateEmit(time) {
             writeErrorFlag = true;
         }
     });
+}
+
+function playSound(file) {
+    // For server-side playback, you still need the filesystem path
+    const localPath = path.join(__dirname, "client", file);
+    playSoundFile(localPath);
+
+    // Emit the public path directly
+    io.emit("play-sound", { path: file });
 }
 
 // Server start with error handling 
