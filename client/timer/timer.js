@@ -1,4 +1,6 @@
 import { playSound } from "../helpers/audio.js";
+import { getSocketLink } from "../helpers/connections.js";
+
 
 let socket; // Declare socket globally
 const app = document.querySelector(".app");
@@ -6,6 +8,13 @@ const fontSize = document.querySelector(".timer").style.fontSize;
 const fontWeight = document.querySelector(".timer").style.fontWeight;
 let betweenRounds = false;
 let roundStarted = false;
+
+// Get dynamic ngrok URL and start sockets and add events
+getSocketLink().then(link => {
+    console.log(`starting sockets at: ${link}`)
+    startSockets(link);
+    addEventListeners();
+});
 
 // Function to handle starting sockets
 function startSockets(link) {
@@ -50,68 +59,50 @@ function startSockets(link) {
     });
 }
 
-// Bind event listeners directly
-document.querySelector(".timer-overlay").addEventListener("click", () => {
-    document.getElementById("auth-modal").style.display = "block";
-});
+function addEventListeners() {
+    // Bind event listeners directly
+    document.querySelector(".timer-overlay").addEventListener("click", () => {
+        document.getElementById("auth-modal").style.display = "block";
+    });
 
-document.querySelector(".close").addEventListener("click", () => {
-    document.getElementById("auth-modal").style.display = "none";
-});
+    document.querySelector(".close").addEventListener("click", () => {
+        document.getElementById("auth-modal").style.display = "none";
+    });
 
-document.getElementById("enableSound").addEventListener("click", () => {
-    playSound("/static/sounds/beep.mp3");
-});
+    document.getElementById("enableSound").addEventListener("click", () => {
+        playSound("/static/sounds/beep.mp3");
+    });
 
-document.addEventListener("click", () => {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    if (audioContext.state === "suspended") {
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed on user click!");
-        });
-    }
-}, { once: true }); // Run only once
-
-
-// Handle password submission
-document.getElementById("submit-password").addEventListener("click", () => {
-    const password = document.getElementById("password-input").value;
-
-    fetch("/control", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-    })
-        .then(response => {
-            if (response.ok) {
-                window.location.href = "/control"; // Redirect to control page
-            } else {
-                document.getElementById("error-message").textContent = "Invalid password!";
-            }
-        });
-});
-
-// Get dynamic ngrok URL from server
-fetch("/connections")
-    .then((res) => res.json())
-    .then(({ lanIPs, port, ngrokUrl }) => {
-        const host = window.location.hostname;
-
-        let link;
-        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
-            link = `http://localhost:${port}`;
-        } else if (lanIPs.includes(host)) {
-            link = `http://${host}:${port}`;
-        } else {
-            link = ngrokUrl.replace("https://", "wss://");
+    document.addEventListener("click", () => {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        console.log(`timer starting sockets at: ${link}`)
-        startSockets(link); // Start the WebSocket connection
+        if (audioContext.state === "suspended") {
+            audioContext.resume().then(() => {
+                console.log("AudioContext resumed on user click!");
+            });
+        }
+    }, { once: true }); // Run only once
+
+    // Handle password submission
+    document.getElementById("submit-password").addEventListener("click", () => {
+        const password = document.getElementById("password-input").value;
+
+        fetch("/control", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+        })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = "/control"; // Redirect to control page
+                } else {
+                    document.getElementById("error-message").textContent = "Invalid password!";
+                }
+            });
     });
+}
 
 function updateTimer(data) {
     const time = data.remainingTime;

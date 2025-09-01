@@ -1,25 +1,14 @@
+import { getSocketLink } from "../helpers/connections.js";
+
 let socket;
 let betweenRounds = false;
 let roundStarted = false;
 
 // Get dynamic ngrok URL from server before attaching event listeners
-fetch("/connections")
-    .then((res) => res.json())
-    .then(({ lanIPs, port, ngrokUrl }) => {
-        const host = window.location.hostname;
-
-        let link;
-        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
-            link = `http://localhost:${port}`;
-        } else if (lanIPs.includes(host)) {
-            link = `http://${host}:${port}`;
-        } else {
-            link = ngrokUrl.replace("https://", "wss://");
-        }
-
-        startSockets(link).then(addEventListeners);
-    });
-
+getSocketLink().then(link => {
+    console.log(`starting sockets at: ${link}`)
+    startSockets(link).then(addEventListeners);
+});
 
 // WebSocket setup function (returns a Promise)
 function startSockets(link) {

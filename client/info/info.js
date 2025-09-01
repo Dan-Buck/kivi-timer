@@ -1,4 +1,6 @@
 import { playSound } from "../helpers/audio.js";
+import { getSocketLink } from "../helpers/connections.js";
+
 
 let socket; // Declare socket globally
 let betweenRounds = false;
@@ -7,6 +9,13 @@ let roundStarted = false;
 const app = document.querySelector(".app");
 const fontSize = document.querySelector(".timer").style.fontSize;
 const fontWeight = document.querySelector(".timer").style.fontWeight;
+
+// Get dynamic ngrok URL and start sockets and add event listeners
+getSocketLink().then(link => {
+    console.log(`starting sockets at: ${link}`)
+    startSockets(link);
+    addEventListeners();
+});
 
 // Function to handle starting sockets
 function startSockets(link) {
@@ -56,47 +65,30 @@ function startSockets(link) {
     });
 }
 
-// Bind event listeners directly
-document.querySelector(".timer-overlay").addEventListener("click", () => {
-    //document.getElementById("auth-modal").style.display = "block";
-});
+function addEventListeners() {
 
-document.getElementById("enableSound").addEventListener("click", () => {
-    playSound("/static/sounds/beep.mp3");
-});
-
-document.addEventListener("click", () => {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    if (audioContext.state === "suspended") {
-        audioContext.resume().then(() => {
-            console.log("AudioContext resumed on user click!");
-        });
-    }
-}, { once: true }); // Run only once
-
-// Get dynamic ngrok URL from server
-fetch("/connections")
-    .then((res) => res.json())
-    .then(({ lanIPs, port, ngrokUrl }) => {
-        const host = window.location.hostname;
-
-        let link;
-        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
-            link = `http://localhost:${port}`;
-        } else if (lanIPs.includes(host)) {
-            link = `http://${host}:${port}`;
-        } else {
-            link = ngrokUrl.replace("https://", "wss://");
-        }
-
-        console.log(`timer starting sockets at: ${link}`)
-        startSockets(link); // Start the WebSocket connection
+    // Bind event listeners directly
+    document.querySelector(".timer-overlay").addEventListener("click", () => {
+        //document.getElementById("auth-modal").style.display = "block";
     });
 
-let audioContext;
+    document.getElementById("enableSound").addEventListener("click", () => {
+        playSound("/static/sounds/beep.mp3");
+    });
+
+    document.addEventListener("click", () => {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioContext.state === "suspended") {
+            audioContext.resume().then(() => {
+                console.log("AudioContext resumed on user click!");
+            });
+        }
+    }, { once: true }); // Run only once
+
+}
 
 function updateTimer(data) {
     const time = data.remainingTime;

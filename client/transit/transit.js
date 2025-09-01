@@ -1,3 +1,5 @@
+import { getSocketLink } from "../helpers/connections.js";
+
 let socket;
 // placeholder settings vars, currently unused
 let roundSettings = {
@@ -9,6 +11,13 @@ let roundSettings = {
 }
 let betweenRounds = false;
 let roundStarted = false;
+
+
+// Get dynamic ngrok URL and start sockets
+getSocketLink().then(link => {
+    console.log(`starting sockets at: ${link}`)
+    startSockets(link);
+});
 
 // Function to start WebSocket connection
 function startSockets(link) {
@@ -153,21 +162,4 @@ function updateBoulders(count) {
         });
 }
 
-// Get dynamic ngrok URL and start sockets
-fetch("/connections")
-    .then((res) => res.json())
-    .then(({ lanIPs, port, ngrokUrl }) => {
-        const host = window.location.hostname;
 
-        let link;
-        if (["localhost", "127.0.0.1", "::1"].includes(host)) {
-            link = `http://localhost:${port}`;
-        } else if (lanIPs.includes(host)) {
-            link = `http://${host}:${port}`;
-        } else {
-            link = ngrokUrl.replace("https://", "wss://");
-        }
-
-        console.log(`transit page starting sockets at: ${link}`);
-        startSockets(link);
-    });
