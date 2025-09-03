@@ -1,14 +1,12 @@
 import { playSound } from "../helpers/audio.js";
 import { getSocketLink } from "../helpers/connections.js";
+import { LAYOUT_PRESETS } from "../helpers/stylePresets.js";
 
 
 let socket; // Declare socket globally
 let betweenRounds = false;
 let roundStarted = false;
-
-const app = document.querySelector(".app");
-const fontSize = document.querySelector(".timer").style.fontSize;
-const fontWeight = document.querySelector(".timer").style.fontWeight;
+let audioContext;
 
 // Get dynamic ngrok URL and start sockets and add event listeners
 getSocketLink().then(link => {
@@ -67,9 +65,19 @@ function startSockets(link) {
 
 function addEventListeners() {
 
-    // Bind event listeners directly
+    // modal controls
     document.querySelector(".timer-overlay").addEventListener("click", () => {
-        //document.getElementById("auth-modal").style.display = "block";
+        document.getElementById("focus-modal").style.display = "block";
+    });
+    document.querySelector(".closeLayoutModal").addEventListener("click", () => {
+        document.getElementById("focus-modal").style.display = "none";
+    });
+    // Attach to all preset buttons
+    document.querySelectorAll("#focus-modal [data-preset]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const preset = btn.getAttribute("data-preset");
+            applyPreset(preset);
+        });
     });
 
     document.getElementById("enableSound").addEventListener("click", () => {
@@ -88,7 +96,20 @@ function addEventListeners() {
         }
     }, { once: true }); // Run only once
 
+    // close modal by clicking anywhere
+    const modal = document.getElementById("focus-modal");
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            modal.style.display = "none"; // closes modal
+        }
+    });
+
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+    const saved = localStorage.getItem("layoutPreset") || "focusTimer";
+    applyPreset(saved);
+});
 
 function updateTimer(data) {
     const time = data.remainingTime;
@@ -97,16 +118,17 @@ function updateTimer(data) {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         if (betweenRounds && roundStarted) {
+            // smaller scale + lighter weight
+            document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
+            document.documentElement.style.setProperty("--timer-weight-scale", "0.85"); // ~6/7
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-            timerElement.style.fontSize = "50vh";
             timerElement.style.color = "gray";
-            timerElement.style.fontWeight = 600;
-
         } else {
+            // reset to defaults
+            document.documentElement.style.setProperty("--timer-font-scale", "1");
+            document.documentElement.style.setProperty("--timer-weight-scale", "1");
             timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-            timerElement.style.fontSize = fontSize;
             timerElement.style.color = "black";
-            timerElement.style.fontWeight = fontWeight;
 
         }
     }
@@ -131,5 +153,19 @@ function updateInfo(data) {
     } else {
         groupsDisplay.textContent = `${roundName}`;
     }
+}
+
+function applyPreset(name) {
+    const preset = LAYOUT_PRESETS[name];
+    if (!preset) return;
+
+    for (const [varName, value] of Object.entries(preset)) {
+        // convert camelCase (timerSize) → kebab-case (--timer-size)
+        const cssVarName = "--" + varName.replace(/[A-Z]/g, m => "-" + m.toLowerCase());
+        document.documentElement.style.setProperty(cssVarName, value);
+    }
+
+    // save to localStorage for recall on refresh
+    localStorage.setItem("layoutPreset", name);
 }
 

@@ -4,9 +4,26 @@ body {
     /* Prevents scroll bars from appearing */
 }
 
+
+:root {
+    --timer-size: 80vh;
+    --timer-font: 60vh;
+    --info-size: 15vh;
+    --stage-font: 10vh;
+    --stage-width: 20vw;
+    --stage-justify: left;
+    --stage-text-align: left;
+    --groups-font: 7vh;
+
+    --timer-font-scale: 1;
+    --timer-weight-scale: 1;
+
+    --groups-display: flex;
+}
+
 .timer {
-    font-size: 60vh;
-    font-weight: 700;
+    font-size: calc(var(--timer-font) * var(--timer-font-scale));
+    font-weight: calc(700 * var(--timer-weight-scale));
     text-align: center;
     color: black;
     font-family: "Source Sans Pro", sans-serif;
@@ -22,7 +39,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 80vh;
+    height: var(--timer-size);
     width: 100vw;
     /* Ensure it spans full width */
     overflow: hidden;
@@ -30,50 +47,46 @@ body {
 
 .info-container {
     display: flex;
-    height: 15vh;
+    height: var(--info-size);
     padding: 30px;
 }
 
 .stage-container {
-    display: flex;
-    flex: 0 0 25%;
-    justify-content: left;
-    align-items: left;
-    height: 15vh;
-    width: 20vw;
+    display: var(--stage-display);
+    flex: 1;
+    /* let it expand when groups are hidden */
+    justify-content: var(--stage-justify);
+    align-items: center;
+    /* or flex-start / flex-end as needed */
+    height: var(--info-size);
+    width: var(--stage-width);
     overflow: hidden;
-    font-size: 10vh;
+    font-size: var(--stage-font);
     font-weight: 700;
-    text-align: left;
+    text-align: var(--stage-text-align);
+    /* can also use var(--stage-text-align) if you want control */
     color: rgb(84, 82, 82);
     font-family: "Source Sans Pro", sans-serif;
     line-height: 1;
     white-space: nowrap;
-    display: flex;
-    justify-content: left;
-    align-items: left;
-    width: 20vw;
 }
 
+
 .groups-container {
-    display: flex;
+    display: var(--groups-display);
     flex: 1;
     justify-content: right;
     align-items: right;
-    height: 15vh;
+    height: var(--info-size);
     width: 70vw;
     overflow: wrap;
-    font-size: 7vh;
+    font-size: var(--groups-font);
     font-weight: 700;
     text-align: right;
     color: rgb(84, 82, 82);
     font-family: "Source Sans Pro", sans-serif;
     line-height: 1;
     white-space: wrap;
-    display: flex;
-    justify-content: right;
-    align-items: right;
-    width: 70vw;
 }
 
 @media (max-aspect-ratio: 1/1) {
@@ -105,4 +118,22 @@ body {
     padding: 10px;
     cursor: pointer;
     border-radius: 5px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
 }
