@@ -141,10 +141,17 @@ function addEventListeners() {
         // show "Next Climber button"
         if (selectedValue == "false") {
             document.getElementById("next-climber").style.display = "none";
+            document.querySelector(".finals-climbers").style.display = "none";
         } else {
             document.getElementById("next-climber").style.display = "block";
+            document.querySelector(".finals-climbers").style.display = "flex";
         }
         socket.emit("change-finals-mode", selectedValue);
+    });
+
+    document.getElementById("finals-climbers-select").addEventListener("change", (event) => {
+        const selectedValue = event.target.value;
+        socket.emit("change-finals-climbers", selectedValue);
     });
 
     document.getElementById("add-groups").addEventListener("click", (event) => {
@@ -315,6 +322,7 @@ function updateInfo(data) {
     const roundName = data.roundName;
     const groups = data.groups;
     const roundSettings = data.roundSettings;
+    roundStarted = data.roundStarted;
 
     const stageDisplay = document.querySelector(".stage-display");
     stageDisplay.textContent = `#${roundState}`;
@@ -326,16 +334,28 @@ function updateInfo(data) {
     const boulderNumbers = document.getElementById("boulder-select");
     const zoneNumbers = document.getElementById("zone-select");
     const finalsMode = document.getElementById("finals-mode-select");
-    timerMode.value = roundSettings.timerMode;
+    const finalsClimbers = document.getElementById("finals-climbers-select");
     boulderNumbers.value = roundSettings.boulders;
     zoneNumbers.value = roundSettings.zones;
     finalsMode.value = roundSettings.finalsMode;
+    finalsClimbers.value = roundSettings.finalsClimbers;
+
+    const timerOption = timerMode.querySelector(`option[value="${roundSettings.timerMode}"]`);
+    if (timerOption) { timerMode.value = roundSettings.timerMode }
+    else {
+        timerMode.value = "custom";
+        const customTimeInput = document.getElementById("custom-time");
+        customTimeInput.style.display = "inline-block";
+        customTimeInput.value = roundSettings.timerMode;
+    };
 
     // whether to show "Next Climber button"
     if (finalsMode.value == "false") {
         document.getElementById("next-climber").style.display = "none";
+        document.querySelector(".finals-climbers").style.display = "none";
     } else {
         document.getElementById("next-climber").style.display = "block";
+        document.querySelector(".finals-climbers").style.display = "flex";
     }
 
     // populate group names, show uploads container, delete button
@@ -349,6 +369,7 @@ function updateInfo(data) {
                 document.querySelector(".uploads-container").style.display = "flex";
                 document.getElementById("add-groups").style.display = "none";
                 document.getElementById("upload-delete").style.display = "block";
+                break;
             }
         }
     });

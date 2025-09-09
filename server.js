@@ -127,6 +127,7 @@ app.get("/round-status", (req, res) => {
         roundStarted: roundStarted
     });
 });
+
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
     if (req.body.delete === "yes") {
@@ -311,7 +312,12 @@ io.on("connection", (socket) => {
     socket.on("change-finals-mode", (mode) => {
         console.log(`finals mode changed to : ${mode}`);
         roundSettings.finalsMode = (mode === "true") ? true : false;
-    })
+    });
+
+    socket.on("change-finals-climbers", (climbers) => {
+        console.log(`# of climbers/group in finals changes to : ${climbers}`);
+        roundSettings.finalsClimbers = climbers;
+    });
 
     socket.on("change-round-state", (data) => {
         console.log(`
@@ -426,29 +432,64 @@ function runTurnoverTimer() {
 function advanceRoundState() {
     roundState++;
     saveStateToFile(roundName, roundState, remainingTime);
-    ondeck = {
-        1: [],
-        2: [],
-        3: [],
-    }
-    if (roundState >= 0) {
-        for (const category in athletes) {
-            if (athletes[category].length === 0) continue;
 
-            // if finalsMode then only 1 climber on the wall at a time
-            if (roundSettings.finalsMode) {
-                const nextUp = (roundState % athletes[category].length); // index 0 is first climber...
-                const boulder = Math.ceil((roundState + 1) / athletes[category].length);
-                ondeck[category].push({ boulder: (boulder === 0) ? 1 : boulder, athlete: athletes[category][nextUp] });
-            } else {
-                for (let boulder = 1; boulder <= roundSettings.boulders; boulder++) {
-                    const nextUp = roundState - 2 * (boulder - 1);
-                    ondeck[category].push({ boulder, athlete: (nextUp >= 0 && nextUp < athletes[category].length) ? athletes[category][nextUp] : null });
+    // reset ondeck buckets for each category
+    ondeck = {};
+    for (const cat in athletes) {
+        ondeck[cat] = [];
+    }
+
+    if (roundState < 0) return;
+
+    const totalBoulders = roundSettings.boulders;
+
+    if (roundSettings.finalsMode) {
+        // 1) largest field size across categories
+        let maxFinalists = 0;
+        for (const cat in athletes) {
+            maxFinalists = Math.max(maxFinalists, athletes[cat].length);
+        }
+        if (maxFinalists === 0) return;
+
+        // 2) spacing so peak overlap ≈ climbersOnWall
+        const climbersOnWall = Math.min(
+            Math.max(1, roundSettings.finalsClimbers || 1),
+            totalBoulders
+        );
+        const offset = Math.max(1, Math.ceil(maxFinalists / climbersOnWall));
+
+        // 3) per category, compute who is on each active boulder this round
+        for (const cat in athletes) {
+            const finalists = athletes[cat];
+            const n = finalists.length;
+
+            for (let boulder = 1; boulder <= totalBoulders; boulder++) {
+                const start = (boulder - 1) * offset;                // when this boulder starts
+                const endExclusive = start + maxFinalists;           // when it finishes
+
+                if (roundState >= start && roundState < endExclusive) {
+                    const globalIndex = roundState - start;            // 0..maxFinalists-1
+                    const athlete = (globalIndex < n) ? finalists[globalIndex] : null;
+                    ondeck[cat].push({ boulder, athlete });
                 }
+            }
+        }
+
+    } else {
+        // Non-finals logic 
+        for (const cat in athletes) {
+            for (let boulder = 1; boulder <= totalBoulders; boulder++) {
+                const nextUp = roundState - 2 * (boulder - 1);
+                const arr = athletes[cat];
+                ondeck[cat].push({
+                    boulder,
+                    athlete: (nextUp >= 0 && nextUp < arr.length) ? arr[nextUp] : null
+                });
             }
         }
     }
 }
+
 
 // advances roundstate to place a climber on a specific boulder
 function selectRoundState(data) {

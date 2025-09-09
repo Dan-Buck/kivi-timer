@@ -61,7 +61,7 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 
 ### Operational Workflow
 - From the control screen enter your round settings and Round Name (hit "Update").
-   - Turn on Finals Mode if only one athlete (per group) will be climbing at a time (also reveals "Next Climber" button).
+   - Optional: turn on Finals Mode to select # athletes / group that will be climbing simultaneously (also reveals "Next Climber" button).
 - If you want to use athlete lists or Group Names, click "Add Groups". NB: "Clear Group Data" will re-hide these.
    - Enter Group Display Names (you can edit these later).
    - Then upload 1 or 2 athlete .csv files without column headers, formatted as below (via Save As .CSV):

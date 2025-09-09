@@ -33,9 +33,12 @@ body {
     margin-bottom: 20px;
 }
 
-.timer,
-.stage-display {
+.timer {
     padding: 10px 20px;
+}
+
+.stage-display {
+    padding: 10px 15px;
 }
 
 /* Settings Container */
@@ -116,6 +119,13 @@ button:active {
     text-wrap: nowrap;
 }
 
+.finals-climbers {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-wrap: nowrap;
+}
 
 label {
     font-size: 1rem;

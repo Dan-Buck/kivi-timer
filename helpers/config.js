@@ -10,6 +10,7 @@ module.exports = {
     roundSettings: {
         timerMode: 300,
         finalsMode: false,
+        finalsClimbers: 1,
         turnover: 15,
         boulders: 5,
         zones: 0,

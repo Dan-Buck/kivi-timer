@@ -100,8 +100,6 @@ function updateOndeck(data) {
         categoryLabel.style.display = "block";
         categoryLabel.textContent = `${groups[category]} - Stage # ${roundState}`;
 
-
-
         categoryContainer.innerHTML = ""; // Clear existing content
 
         ondeck[category].forEach(({ boulder, athlete }) => {
