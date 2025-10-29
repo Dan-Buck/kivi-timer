@@ -1,91 +1,30 @@
-import { getSocketLink } from "../helpers/connections.js";
 import { csvToJson, csvError } from "../helpers/utils.js";
+import { connectionService } from "../helpers/connectionService.js";
 
-let socket;
-let betweenRounds = false;
-let roundStarted = false;
-
-// Get dynamic ngrok URL from server before attaching event listeners
-getSocketLink().then(link => {
-    console.log(`starting sockets at: ${link}`)
-    startSockets(link).then(addEventListeners);
-});
-
-// WebSocket setup function (returns a Promise)
-function startSockets(link) {
-    return new Promise((resolve) => {
-        socket = io(link, {
-            reconnection: true,         // enable auto reconnect
-            reconnectionAttempts: Infinity, // retry forever
-            reconnectionDelay: 1000,    // start at 1s
-            reconnectionDelayMax: 5000, // cap at 5s
-        });
-
-        //check for existing server info and update page
-        fetch("/round-status")
-            .then((res) => res.json())
-            .then((data) => {
-                updateTimer(data);
-                updateInfo(data);
-                if (data.betweenRounds) {
-                    betweenRounds = true;
-                } else {
-                    betweenRounds = false;
-                }
-            });
-
-        socket.on("connect", () => {
-            console.log("Socket connected.");
-            resolve(); // Ensure event listeners attach after socket is ready
-        });
-
-        // Handle timer update
-        socket.on("timer-update", (data) => {
-            updateTimer(data);
-        });
-
-        socket.on("round-start", (data) => {
-            roundStarted = data.roundStarted;
-        });
-
-        socket.on("round-begin", () => {
-            betweenRounds = false;
-        });
-
-        socket.on("round-end", () => {
-            betweenRounds = true;
-        });
-
-        socket.on("ondeck-update", (data) => {
-            const roundState = data.roundState;
-            const stageDisplay = document.querySelector(".stage-display");
-            stageDisplay.textContent = `#${roundState}`;
-        });
-    });
-}
+let previousState = {};
 
 function addEventListeners() {
     document.getElementById("start-timer").addEventListener("click", () => {
-        socket.emit("start-timer");
+        connectionService.startTimer();
     });
 
     document.getElementById("pause-timer").addEventListener("click", () => {
-        socket.emit("pause-timer");
+        connectionService.pauseTimer();
     });
 
     document.getElementById("zero-timer").addEventListener("click", () => {
-        socket.emit("zero-timer");
+        connectionService.zeroTimer();
     });
 
     document.getElementById("next-climber").addEventListener("click", () => {
-        socket.emit("next-climber");
+        connectionService.nextClimber();
     });
 
     // Handle round name form submission
     document.getElementById("round-name-form").addEventListener("submit", (event) => {
         event.preventDefault();
         const roundName = document.getElementById("round-name").value;
-        socket.emit("round-name-update", roundName);
+        connectionService.updateRoundName(roundName);
         alert(`Round name update: ${roundName}`);
     });
 
@@ -99,14 +38,14 @@ function addEventListeners() {
             customTimeInput.focus();
         } else {
             customTimeInput.style.display = "none";
-            socket.emit("change-timer-mode", parseInt(selectedValue, 10));
+            connectionService.changeTimerMode(parseInt(selectedValue, 10));
         }
     });
 
     document.getElementById("custom-time").addEventListener("input", (event) => {
         const customValue = parseInt(event.target.value, 10);
         if (!isNaN(customValue) && customValue > 0) {
-            socket.emit("change-timer-mode", customValue);
+            connectionService.changeTimerMode(customValue);
         }
     });
 
@@ -120,20 +59,20 @@ function addEventListeners() {
             customBoulderInput.focus();
         } else {
             customBoulderInput.style.display = "none";
-            socket.emit("change-boulder-number", parseInt(selectedValue, 10));
+            connectionService.changeBoulderNumber(parseInt(selectedValue, 10));
         }
     });
 
     document.getElementById("custom-boulders").addEventListener("input", (event) => {
         const customValue = parseInt(event.target.value, 10);
         if (!isNaN(customValue) && customValue > 0) {
-            socket.emit("change-boulder-number", customValue);
+            connectionService.changeBoulderNumber(customValue);
         }
     });
 
     document.getElementById("zone-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
-        socket.emit("change-zone-number", parseInt(selectedValue, 10));
+        connectionService.changeZoneNumber(parseInt(selectedValue, 10));
     });
 
     document.getElementById("finals-mode-select").addEventListener("change", (event) => {
@@ -146,12 +85,12 @@ function addEventListeners() {
             document.getElementById("next-climber").style.display = "block";
             document.querySelector(".finals-climbers").style.display = "flex";
         }
-        socket.emit("change-finals-mode", selectedValue);
+        connectionService.changeFinalsMode(selectedValue);
     });
 
     document.getElementById("finals-climbers-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
-        socket.emit("change-finals-climbers", selectedValue);
+        connectionService.changeFinalsClimbers(selectedValue);
     });
 
     document.getElementById("add-groups").addEventListener("click", (event) => {
@@ -169,20 +108,20 @@ function addEventListeners() {
 
         groupName.addEventListener("input", (event) => {
             const newGroupName = event.target.value;
-            socket.emit("group-name-update", { newGroupName: newGroupName, groupDesig });
+            connectionService.updateGroupName({ newGroupName: newGroupName, groupDesig });
         });
 
         categorySelect.addEventListener("change", (event => {
             const selectedValue = event.target.value;
-            socket.emit("group-category-change", { groupName: groupName.value, selectedCategory: selectedValue });
-        }))
+            connectionService.changeGroupCategory({ groupName: groupName.value, selectedCategory: selectedValue });
+        }));
 
         uploadBtn.addEventListener("click", () => {
             if (fileInput.files.length === 0) {
                 alert("Please select a CSV file.");
                 return;
             }
-            if (!groupName.value.trim || groupName.value === "") {
+            if (!groupName.value.trim() || groupName.value === "") {
                 alert("Please enter a group name");
                 return;
             }
@@ -296,7 +235,7 @@ function addEventListeners() {
         const time = parseInt(document.getElementById("timer-set").value, 10)
 
         if ((!isNaN(athleteID) && !isNaN(boulder)) || (!isNaN(stage))) {
-            socket.emit("change-round-state", { athleteID, boulder, stage, time });
+            connectionService.changeRoundState({ athleteID, boulder, stage, time });
             modal.style.display = "none"; // Close modal after submission
         } else {
             alert("Please enter valid numbers.");
@@ -308,8 +247,7 @@ function addEventListeners() {
         const isConfirmed = window.confirm("Are you sure you want to reset the round?");
 
         if (isConfirmed) {
-
-            socket.emit("reset-round");
+            connectionService.resetRound();
         } else {
             console.log("Reset round canceled.");
         }
@@ -318,11 +256,7 @@ function addEventListeners() {
 }
 
 function updateInfo(data) {
-    const roundState = data.roundState;
-    const roundName = data.roundName;
-    const groups = data.groups;
-    const roundSettings = data.roundSettings;
-    roundStarted = data.roundStarted;
+    const { roundName, roundSettings, groups, roundState } = data;
 
     const stageDisplay = document.querySelector(".stage-display");
     stageDisplay.textContent = `#${roundState}`;
@@ -377,11 +311,11 @@ function updateInfo(data) {
 }
 
 function updateTimer(data) {
-    const time = data.remainingTime;
+    const { remainingTime, roundStarted, betweenRounds } = data;
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = Math.floor(remainingTime % 60);
         if (betweenRounds && roundStarted) {
             timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
         } else {
@@ -389,4 +323,35 @@ function updateTimer(data) {
         }
     }
 }
+
+function handleStateUpdate(currentState) {
+    // check for timer change 
+    if (currentState.remainingTime !== previousState.remainingTime) {
+        updateTimer(currentState);
+    }
+
+    // check for round settings, state changes
+    if (currentState.roundState !== previousState.roundState ||
+        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups) ||
+        JSON.stringify(currentState.ondeck) !== JSON.stringify(previousState.ondeck) ||
+        currentState.roundName !== previousState.roundName
+    ) {
+        updateInfo(currentState);
+    }
+
+    previousState = JSON.parse(JSON.stringify(currentState));
+}
+
+function main() {
+    addEventListeners();
+    //subscribe
+    connectionService.onUpdate(handleStateUpdate);
+
+    // sets up connection, state fetching, events
+    connectionService.init();
+
+}
+
+main();
+
 

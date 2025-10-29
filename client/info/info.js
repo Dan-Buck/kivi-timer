@@ -1,70 +1,10 @@
-import { playSound } from "../helpers/audio.js";
-import { getSocketLink } from "../helpers/connections.js";
+import { connectionService } from "../helpers/connectionService.js";
 import { LAYOUT_PRESETS } from "../helpers/stylePresets.js";
 
 
-let socket; // Declare socket globally
-let betweenRounds = false;
-let roundStarted = false;
-let audioContext;
-
-// Get dynamic ngrok URL and start sockets and add event listeners
-getSocketLink().then(link => {
-    console.log(`starting sockets at: ${link}`)
-    startSockets(link);
-    addEventListeners();
-});
-
-// Function to handle starting sockets
-function startSockets(link) {
-    socket = io(link, {
-        reconnection: true,         // enable auto reconnect
-        reconnectionAttempts: Infinity, // retry forever
-        reconnectionDelay: 1000,    // start at 1s
-        reconnectionDelayMax: 5000, // cap at 5s
-    });
-
-    fetch("/round-status")
-        .then((res) => res.json())
-        .then((data) => {
-            if (data.betweenRounds) {
-                betweenRounds = true;
-            } else {
-                betweenRounds = false;
-            }
-            updateTimer(data);
-            updateInfo(data);
-        });
-
-    // Handle timer update from server
-    socket.on("timer-update", function (data) {
-        updateTimer(data);
-    });
-
-    socket.on("round-start", (data) => {
-        roundStarted = data.roundStarted;
-    });
-
-
-    socket.on("round-end", () => {
-        betweenRounds = true;
-    });
-
-    socket.on("round-begin", () => {
-        betweenRounds = false;
-    });
-
-    socket.on("ondeck-update", (data) => {
-        updateInfo(data);
-    });
-
-    socket.on("play-sound", (data) => {
-        playSound(data.path);
-    });
-}
+let previousState = {};
 
 function addEventListeners() {
-
     // modal controls
     document.querySelector(".timer-overlay").addEventListener("click", () => {
         document.getElementById("focus-modal").style.display = "block";
@@ -80,21 +20,10 @@ function addEventListeners() {
         });
     });
 
-    document.getElementById("enableSound").addEventListener("click", () => {
-        playSound("/static/sounds/beep.mp3");
-    });
-
+    // The connectionService handles the actual sound playback.
     document.addEventListener("click", () => {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        if (audioContext.state === "suspended") {
-            audioContext.resume().then(() => {
-                console.log("AudioContext resumed on user click!");
-            });
-        }
-    }, { once: true }); // Run only once
+        console.log("Page interaction detected, audio should be enabled.");
+    }, { once: true });
 
     // close modal by clicking anywhere
     const modal = document.getElementById("focus-modal");
@@ -112,11 +41,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateTimer(data) {
-    const time = data.remainingTime;
+    const { remainingTime, betweenRounds, roundStarted } = data;
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = Math.floor(remainingTime % 60);
         if (betweenRounds && roundStarted) {
             // smaller scale + lighter weight
             document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
@@ -135,9 +64,7 @@ function updateTimer(data) {
 }
 
 function updateInfo(data) {
-    const groups = data.groups;
-    const roundState = data.roundState;
-    const roundName = data.roundName;
+    const { groups, roundName, roundState } = data;
 
     const stageDisplay = document.querySelector(".stage-display");
     const groupsDisplay = document.querySelector(".groups-display");
@@ -169,3 +96,25 @@ function applyPreset(name) {
     localStorage.setItem("layoutPreset", name);
 }
 
+function handleStateUpdate(currentState) {
+    if (currentState.remainingTime !== previousState.remainingTime) {
+        updateTimer(currentState);
+    }
+
+    if (currentState.roundState !== previousState.roundState ||
+        currentState.roundName !== previousState.roundName ||
+        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups)
+    ) {
+        updateInfo(currentState);
+    }
+
+    previousState = JSON.parse(JSON.stringify(currentState));
+}
+
+function main() {
+    addEventListeners();
+    connectionService.onUpdate(handleStateUpdate);
+    connectionService.init();
+}
+
+main();
