@@ -3,7 +3,6 @@ const session = require("express-session");
 const socketIo = require("socket.io");
 const http = require("http");
 const path = require("path");
-const fs = require("fs");
 const fsp = require("fs/promises");  // fsp = fs.promises
 const dotenv = require("dotenv");
 dotenv.config();
@@ -17,10 +16,7 @@ const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
 const { playSoundFile } = require("./helpers/serverSound");
-const { on } = require("events");
-const { emit } = require("process");
-const { time } = require("console");
-
+const CompetitionManager = require("./server/CompetitionManager");
 
 //get settings/configs
 const port = settings.port;
@@ -28,39 +24,7 @@ const controlKey = settings.controlKey;
 const ngrokAuth = settings.ngrok.authtoken;
 const ngrokHost = settings.ngrok.hostname;
 const tunnelAuth = settings.ngrok.tunnelAuth;
-const soundMap = settings.soundMap;
-let roundSettings = settings.roundSettings;
 let ngrokUrl = ""; // Store the generated ngrok URL
-
-// timer management vars
-let timerInterval, turnoverInterval, betweenRounds, roundStarted;
-let remainingTime = 0;
-let remainingTurnoverTime = 0;
-let roundState = 0;
-let roundName = "";
-let startInStageTime = 0;
-let nextClimberFlag = false; // for finalsMode
-
-// athlete list
-let athletes = {
-    1: [],
-    2: [],
-    3: [],
-}
-
-// group name tracker
-let groups = {
-    1: "",
-    2: "",
-    3: "",
-}
-
-// ondeck tracker
-let ondeck = {
-    1: [],
-    2: [],
-    3: [],
-}
 
 // Setup session middleware
 app.use(
@@ -116,59 +80,25 @@ app.get("/connections", (req, res) => {
 
 // API for round status requests from new connections
 app.get("/round-status", (req, res) => {
-    res.json({
-        roundName: roundName,
-        roundState: roundState,
-        betweenRounds: betweenRounds,
-        ondeck: ondeck,
-        groups: groups,
-        roundSettings: roundSettings,
-        remainingTime: remainingTime,
-        roundStarted: roundStarted
-    });
+    res.json(competition.getFullState());
 });
 
 // handles athlete data intake/deletion
 app.post("/athletes", (req, res) => {
-    if (req.body.delete === "yes") {
-        // Clear the athletes/groups/undeck data
-        clearData();
-        console.log("athlete data cleared");
-        return res.status(200).json({ message: "Athlete data cleared" });
+    const result = competition.handleAthleteUpload(req.body);
+    if (result.error) {
+        return res.status(400).json({ error: result.error });
     }
+    res.status(200).json({ message: result.message });
 
-    if (roundStarted) {
-        return res.status(400).json({ error: "Round started: first 'Reset Entire Round'" });
-    }
-
-    const { athletes: receivedAthletes, category: receivedCategory, groupName: receivedGroupName, groupNumber: groupDesig } = req.body; // Expecting { athletes: [...] }
-
-    // Expecting "group-1"
-    groupNumber = parseInt(groupDesig.split("-")[1], 10);
-
-    if (!Array.isArray(receivedAthletes) || !receivedAthletes.every(a => a.id && a.firstName && a.lastName)) {
-        console.log(`bad upload array: ${groupNumber}`);
-        return res.status(400).json({ error: "Invalid athlete data format" });
-    }
-
-    if (!athletes.hasOwnProperty(groupNumber)) {
-        console.log(`bad upload index: ${groupNumber}`);
-        return res.status(400).json({ error: "Invalid category" });
-    }
-
-    athletes[groupNumber] = receivedAthletes; // Overwrite existing data
-    groups[groupNumber] = receivedGroupName; // store group name
-    console.log(`groups: ${groups[groupNumber]}`);
-    res.status(200).json({ message: "Athlete data stored successfully" });
-    console.log("athlete list received: " + receivedGroupName);
 });
 
 app.get("/athletes", (req, res) => {
-    res.json(athletes);
+    res.json(competition.getAthletes());
 });
 
 app.get("/round-settings", (req, res) => {
-    res.json(roundSettings);
+    res.json(competition.getRoundSettings());
 })
 
 // Error handling middleware
@@ -182,408 +112,52 @@ io.on("connection", (socket) => {
     const ip = socket.handshake.headers["x-forwarded-for"] || socket.handshake.address;
     console.log(`New socket from IP: ${ip} (ID: ${socket.id})`);
 
-    socket.on("start-timer", () => {
-        // 5s countdown on first start
-        if (!roundStarted) {
-            console.log(`timer started`);
-            roundStarted = true;
-            io.emit("round-start", { roundStarted });
-            betweenRounds = true;
-            remainingTurnoverTime = 6;
-            return runTurnoverTimer();
-        }
+    socket.on("start-timer", () => competition.startTimer());
+    socket.on("pause-timer", () => competition.pauseTimer());
+    socket.on("zero-timer", () => competition.zeroTimer());
+    socket.on("next-climber", () => competition.nextClimber());
+    socket.on("round-name-update", (newRoundName) => competition.updateRoundName(newRoundName));
+    socket.on("group-name-update", (data) => competition.updateGroupName(data));
+    socket.on("group-category-change", (data) => competition.updateGroupCategory(data));
+    socket.on("reset-round", () => competition.resetRound());
+    socket.on("change-round-state", (data) => competition.changeRoundState(data));
 
-        if (timerInterval || turnoverInterval) {
-            return console.log("timer already running");
-        }
-        if (betweenRounds) {
-            console.log("resuming turnover timer");
-            runTurnoverTimer();
-        } else {
-            console.log("resuming timer");
-            playSound(soundMap[60]);
-            if (roundSettings.finalsMode && nextClimberFlag) {
-                nextClimberFlag = false;
-                advanceRoundState();
-                io.emit("round-begin");
-                io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-            }
-            runTimer();
-        }
-    });
-
-    socket.on("pause-timer", () => {
-        console.log("timer paused");
-        clearAllIntervals();
-    });
-
-    socket.on("zero-timer", () => {
-        console.log("timer zero-ed");
-        clearAllIntervals();
-        remainingTime = roundSettings.timerMode;
-        timerUpdateEmit(remainingTime);
-    });
-
-    socket.on("next-climber", () => {
-        console.log("next climber: timer paused, round advanced");
-        reset();
-        roundStarted = true;
-        io.emit("round-end");
-        nextClimberFlag = true;
-        // spoof roundState +1 for screens
-        io.emit("ondeck-update", {
-            roundName: roundName,
-            ondeck: ondeck,
-            roundState: (roundState + 1),
-            groups: groups,
-            remainingTime: remainingTime,
-            roundStarted: roundStarted
-        });
-    });
-
-    socket.on("round-name-update", (newRoundName) => {
-        roundName = newRoundName;
-        console.log(`round name update: ${roundName}`);
-    });
-
-    socket.on("group-name-update", (data) => {
-        groupNumber = parseInt(data.groupDesig.split("-")[1], 10);
-        groups[groupNumber] = data.newGroupName;
-    });
-
-    socket.on("group-category-change", (data) => {
-        if (!data.groupName) { return };
-        selectedCategory = data.selectedCategory;
-        groupName = data.groupName;
-        // TODO: figure out how to handle this with client-side protections against group wiping (or do away with categories)
-        /*for (const category in groups) {
-            if (groups[category] == groupName) {
-                groups[category] = "";
-                groups[selectedCategory] = groupName;
-                ondeck[selectedCategory] = ondeck[category];
-                ondeck[category] = "";
-                athletes[selectedCategory] = athletes[category];
-                athletes[category] = "";
-                console.log(`category change: ${groupName} from ${category} to ${selectedCategory}`);
-            }
-        }
-        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-        */
-    });
-
-    socket.on("reset-round", () => {
-        console.log("round reset");
-        roundState = 0;
-        reset();
-        // populate transit area boulder list
-        for (const category in athletes) {
-            if (groups[category].length > 0) {
-                roundState = -1;
-                advanceRoundState();
-                break;
-            }
-        }
-        io.emit("ondeck-update", {
-            roundName: roundName,
-            ondeck: ondeck,
-            roundState: (roundState + 1),
-            groups: groups,
-            remainingTime: remainingTime,
-            roundStarted: roundStarted
-        });
-    });
-
-    socket.on("change-timer-mode", (mode) => {
-        console.log(`timer mode changed to ${mode}`);
-        roundSettings.timerMode = mode;
-    });
-
-    socket.on("change-boulder-number", (boulders) => {
-        console.log(`boulders in round changed to ${boulders}`);
-        roundSettings.boulders = boulders;
-        io.emit("settings-update");
-    });
-
-    socket.on("change-zone-number", (zones) => {
-        console.log(`zones in round changed to ${zones}`);
-        roundSettings.zones = zones;
-    });
-
-    socket.on("change-finals-mode", (mode) => {
-        console.log(`finals mode changed to : ${mode}`);
-        roundSettings.finalsMode = (mode === "true") ? true : false;
-    });
-
-    socket.on("change-finals-climbers", (climbers) => {
-        console.log(`# of climbers/group in finals changes to : ${climbers}`);
-        roundSettings.finalsClimbers = climbers;
-    });
-
-    socket.on("change-round-state", (data) => {
-        console.log(`
-            round state change: athlete# [${data.athleteID}] boulder# [${data.boulder}] stage# [${data.stage}] time: [${data.time}]
-            `);
-        reset();
-        roundState = 0;
-        if (data.time) {
-            remainingTime = data.time;
-            startInStageTime = data.time;
-            roundStarted = false;
-            io.emit("round-start", { roundStarted });
-            betweenRounds = false;
-            io.emit("round-begin", { groupName: groups, roundState: roundState });
-            timerUpdateEmit(remainingTime);
-        }
-        selectRoundState(data);
-    });
-
+    // Settings updates
+    socket.on("change-timer-mode", (mode) => competition.updateSettings({ timerMode: mode }));
+    socket.on("change-boulder-number", (boulders) => competition.updateSettings({ boulders: boulders }));
+    socket.on("change-zone-number", (zones) => competition.updateSettings({ zones: zones }));
+    socket.on("change-finals-mode", (mode) => competition.updateSettings({ finalsMode: (mode === "true") }));
+    socket.on("change-finals-climbers", (climbers) => competition.updateSettings({ finalsClimbers: climbers }));
 });
 
-function reset() {
-    remainingTime = roundSettings.timerMode;
-    betweenRounds = false;
-    roundStarted = false;
-    io.emit("round-start", { roundStarted });
-    clearAllIntervals();
-    timerUpdateEmit(remainingTime);
-    io.emit("settings-update", { roundSettings });
-    io.emit("round-end");
-}
-
-function clearData() {
-    athletes = {
-        1: [],
-        2: [],
-        3: []
-    };
-    groups = {
-        1: "",
-        2: "",
-        3: "",
-    };
-    ondeck = {
-        1: [],
-        2: [],
-        3: [],
-    }
-    io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-}
-
-function clearAllIntervals() {
-    clearInterval(timerInterval);
-    clearInterval(turnoverInterval);
-    timerInterval = null;
-    turnoverInterval = null;
-}
-
-function runTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        if (remainingTime > 0) {
-            remainingTime--;
-            timerUpdateEmit(remainingTime);
-        } else {
-            // 2 min observation setting has no turnover time per request
-            if (roundSettings.timerMode === 120) {
-                remainingTime = roundSettings.timerMode;
-                return runTimer();
-            }
-            clearInterval(timerInterval);
-            betweenRounds = true;
-            io.emit("round-end");
-            // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
-            io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
-
-            timerUpdateEmit(roundSettings.turnover);
-            runTurnoverTimer();
-        }
-    }, 1000);
-}
-
-function runTurnoverTimer() {
-    if (turnoverInterval) clearInterval(turnoverInterval);
-    if (remainingTurnoverTime === 0) remainingTurnoverTime = roundSettings.turnover;
-
-    turnoverInterval = setInterval(() => {
-        if (remainingTurnoverTime > 0) {
-            remainingTurnoverTime--;
-            timerUpdateEmit(remainingTurnoverTime);
-        } else {
-            clearInterval(turnoverInterval)
-            betweenRounds = false;
-            io.emit("round-begin", { groupName: groups, roundState: roundState });
-            console.log("stage " + (roundState + 1) + " begin: " + groups[1] + "|" + groups[2] + "|" + groups[3]);
-            if (startInStageTime != 0) {
-                remainingTime = startInStageTime;
-                timerUpdateEmit(remainingTime);
-                startInStageTime = 0;
-            } else {
-                remainingTime = roundSettings.timerMode;
-                timerUpdateEmit(remainingTime);
-                advanceRoundState();
-                io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-            }
-            runTimer();
-        }
-    }, 1000);
-}
-
-// moves climbers through boulders by 1 step
-function advanceRoundState() {
-    roundState++;
-    saveStateToFile(roundName, roundState, remainingTime);
-
-    // reset ondeck buckets for each category
-    ondeck = {};
-    for (const cat in athletes) {
-        ondeck[cat] = [];
-    }
-
-    if (roundState < 0) return;
-
-    const totalBoulders = roundSettings.boulders;
-
-    if (roundSettings.finalsMode) {
-        // 1) largest field size across categories
-        let maxFinalists = 0;
-        for (const cat in athletes) {
-            maxFinalists = Math.max(maxFinalists, athletes[cat].length);
-        }
-        if (maxFinalists === 0) return;
-
-        // 2) spacing so peak overlap ≈ climbersOnWall
-        const climbersOnWall = Math.min(
-            Math.max(1, roundSettings.finalsClimbers || 1),
-            totalBoulders
-        );
-        const offset = Math.max(1, Math.ceil(maxFinalists / climbersOnWall));
-
-        // 3) per category, compute who is on each active boulder this round
-        for (const cat in athletes) {
-            const finalists = athletes[cat];
-            const n = finalists.length;
-
-            for (let boulder = 1; boulder <= totalBoulders; boulder++) {
-                const start = (boulder - 1) * offset;                // when this boulder starts
-                const endExclusive = start + maxFinalists;           // when it finishes
-
-                if (roundState >= start && roundState < endExclusive) {
-                    const globalIndex = roundState - start;            // 0..maxFinalists-1
-                    const athlete = (globalIndex < n) ? finalists[globalIndex] : null;
-                    ondeck[cat].push({ boulder, athlete });
-                }
-            }
-        }
-
-    } else {
-        // Non-finals logic 
-        for (const cat in athletes) {
-            for (let boulder = 1; boulder <= totalBoulders; boulder++) {
-                const nextUp = roundState - 2 * (boulder - 1);
-                const arr = athletes[cat];
-                ondeck[cat].push({
-                    boulder,
-                    athlete: (nextUp >= 0 && nextUp < arr.length) ? arr[nextUp] : null
-                });
-            }
-        }
-    }
-}
-
-
-// advances roundstate to place a climber on a specific boulder
-function selectRoundState(data) {
-    let steps = 0;
-    if (data.stage) {
-        if (data.stage < 0) {
-            console.log(`setting round stage to ${data.stage}`);
-            roundState = data.stage - 2;
-            advanceRoundState();
-            io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-            return;
-        }
-        console.log(`advancing ${data.stage} steps`);
-        steps = data.stage - 1;
-    } else {
-        const athleteID = String(data.athleteID);
-        const boulder = data.boulder;
-        let placeInOrder = -1
-        let foundCategory;
-        for (const category in athletes) {
-            placeInOrder = athletes[category].findIndex(athlete => athlete.id === athleteID);
-            if (placeInOrder !== -1) {
-                foundCategory = category
-                break;
-            }
-        }
-        if (placeInOrder === -1 || !foundCategory) {
-            console.log('could not place athlete, ID not found in list');
-            return;
-        }
-
-        const multiplier = roundSettings.finalsMode ? athletes[foundCategory].length : 2;
-        steps = placeInOrder + multiplier * (boulder - 1);
-    }
-
-    // check for timer set to begin directly in stage
-    if (data.time) {
-        steps++;
-    };
-
-    for (let step = 0; step < steps; step++) {
-        advanceRoundState();
-    }
-    // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
-    if (!data.time) {
-        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: (roundState + 1), groups: groups });
-    } else {
-        io.emit("ondeck-update", { roundName: roundName, ondeck: ondeck, roundState: roundState, groups: groups });
-    }
-}
-
-let writeErrorFlag;
-// emits timer update, writes to txt, plays sound
-function timerUpdateEmit(time) {
-    if (!time) {
-        io.emit("timer-update", { remainingTime });
-        return
-    }
-
-    io.emit("timer-update", { remainingTime: time });
-
-    // play sound out of the server, and emit to clients at configured times
-    const file = soundMap[time];
-    if (file) {
-        playSound(file);
-    }
-
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    let writeString;
-    if (betweenRounds) {
-        writeString = `transit${roundState + 1}/${formattedTime}`;
-    } else {
-        writeString = `stage${roundState}/${formattedTime}`
-    }
-    const filePath = path.join(__dirname, "misc/timer.txt");
-
-    fsp.writeFile(filePath, writeString, "utf-8").catch(err => {
-        if (!writeErrorFlag) {
-            console.error("Timer file write failed:", err.message);
-            writeErrorFlag = true;
-        }
-    });
-}
-
-function playSound(file) {
-    // For server-side playback, you still need the filesystem path
+const handlePlaySound = (file) => {
+    // The `playSound` function from your original code
     const localPath = path.join(__dirname, "client", file);
     playSoundFile(localPath);
-
-    // Emit the public path directly
     io.emit("play-sound", { path: file });
+};
+
+const handleWriteStatus = (writeString, callback) => {
+    const filePath = path.join(__dirname, "misc/timer.txt");
+    fsp.writeFile(filePath, writeString, "utf-8").then(() => callback(null)).catch(callback);
+};
+
+const handleSaveStateToFile = (roundName, roundState, remainingTime) => {
+    saveStateToFile(roundName, roundState, remainingTime);
 }
+
+const competition = new CompetitionManager(
+    io,
+    {
+        roundSettings: settings.roundSettings, // from config.js
+        soundMap: settings.soundMap            // from config.js
+    },
+    {
+        onPlaySound: handlePlaySound,
+        onWriteStatus: handleWriteStatus,
+        onSaveStateToFile: handleSaveStateToFile
+    }
+);
 
 // Server start with error handling 
 try {
@@ -610,8 +184,7 @@ try {
 
 process.on("SIGINT", async () => {
     console.log("Shutting down...");
-    clearInterval(timerInterval);
-    clearInterval(turnoverInterval);
+    competition.shutdown();
     try {
         await ngrok.disconnect(); // safely ignore if not running
     } catch (err) {
