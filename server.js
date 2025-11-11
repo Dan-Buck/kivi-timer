@@ -184,7 +184,7 @@ try {
 
 process.on("SIGINT", async () => {
     console.log("Shutting down...");
-    competition.shutDown();
+    competition.shutdown();
     try {
         await ngrok.disconnect(); // safely ignore if not running
     } catch (err) {
