@@ -16,7 +16,7 @@ const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
 const { playSoundFile } = require("./helpers/serverSound");
-const { CompetitionManager } = require("./server/CompetitionManager");
+const CompetitionManager = require("./server/CompetitionManager");
 
 //get settings/configs
 const port = settings.port;
