@@ -49,10 +49,19 @@ function updateTimer(data) {
     if (timerElement) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
+        let firstDigits, secondDigits;
         if (betweenRounds && roundStarted) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
         } else {
-            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+            // check for hour+ timer, convert to HH:MM
+            if (minutes > 59) {
+                firstDigits = Math.floor(minutes / 60);
+                secondDigits = minutes % 60;
+            } else {
+                firstDigits = minutes;
+                secondDigits = secondDigits
+            }
+            timerElement.textContent = `${firstDigits.toString().padStart(2, "0")}:${secondDigits.toString().padStart(2, "0")}`;
         }
     }
 }

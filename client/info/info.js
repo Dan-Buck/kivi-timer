@@ -46,6 +46,7 @@ function updateTimer(data) {
     if (timerElement) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
+        let firstDigits, secondDigits;
         if (betweenRounds && roundStarted) {
             // smaller scale + lighter weight
             document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
@@ -56,9 +57,16 @@ function updateTimer(data) {
             // reset to defaults
             document.documentElement.style.setProperty("--timer-font-scale", "1");
             document.documentElement.style.setProperty("--timer-weight-scale", "1");
-            timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+            // check for hour+ timer, convert to HH:MM
+            if (minutes > 59) {
+                firstDigits = Math.floor(minutes / 60);
+                secondDigits = minutes % 60;
+            } else {
+                firstDigits = minutes;
+                secondDigits = secondDigits
+            }
+            timerElement.textContent = `${firstDigits.toString().padStart(2, "0")}:${secondDigits.toString().padStart(2, "0")}`;
             timerElement.style.color = "black";
-
         }
     }
 }
