@@ -62,7 +62,7 @@ function updateTimer(data) {
                 secondDigits = minutes % 60;
             } else {
                 firstDigits = minutes;
-                secondDigits = secondDigits
+                secondDigits = seconds;
             }
             timerElement.textContent = `${firstDigits.toString().padStart(2, "0")}:${secondDigits.toString().padStart(2, "0")}`;
             timerElement.style.fontSize = fontSize;
