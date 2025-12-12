@@ -131,7 +131,6 @@ io.on("connection", (socket) => {
 });
 
 const handlePlaySound = (file) => {
-    // The `playSound` function from your original code
     const localPath = path.join(__dirname, "client", file);
     playSoundFile(localPath);
     io.emit("play-sound", { path: file });

@@ -37,6 +37,7 @@ function addEventListeners() {
             customTimeInput.value = ""; // Clear previous input
             customTimeInput.focus();
         } else {
+            customTimeInput.value = "";
             customTimeInput.style.display = "none";
             connectionService.changeTimerMode(parseInt(selectedValue, 10));
         }
@@ -275,7 +276,11 @@ function updateInfo(data) {
     finalsClimbers.value = roundSettings.finalsClimbers;
 
     const timerOption = timerMode.querySelector(`option[value="${roundSettings.timerMode}"]`);
-    if (timerOption) { timerMode.value = roundSettings.timerMode }
+    if (timerOption) {
+        timerMode.value = roundSettings.timerMode;
+        const customTimeInput = document.getElementById("custom-time");
+        customTimeInput.style.display = "none";
+    }
     else {
         timerMode.value = "custom";
         const customTimeInput = document.getElementById("custom-time");
@@ -331,11 +336,7 @@ function handleStateUpdate(currentState) {
     }
 
     // check for round settings, state changes
-    if (currentState.roundState !== previousState.roundState ||
-        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups) ||
-        JSON.stringify(currentState.ondeck) !== JSON.stringify(previousState.ondeck) ||
-        currentState.roundName !== previousState.roundName
-    ) {
+    if (JSON.stringify(currentState) !== JSON.stringify(previousState)) {
         updateInfo(currentState);
     }
 

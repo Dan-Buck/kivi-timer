@@ -38,6 +38,9 @@ class CompetitionManager {
             2: [],
             3: [],
         }
+
+        // queue with default settings
+        this._reset();
     }
 
     // -- private methods --
@@ -45,6 +48,7 @@ class CompetitionManager {
         this.remainingTime = this.roundSettings.timerMode;
         this.betweenRounds = false;
         this.roundStarted = false;
+        this.nextClimberFlag = false;
         this.io.emit("round-start", { roundStarted: this.roundStarted });
         this._clearAllIntervals();
         this._timerUpdateEmit(this.remainingTime);
@@ -81,11 +85,23 @@ class CompetitionManager {
                 clearInterval(this.timerInterval);
                 this.betweenRounds = true;
                 this.io.emit("round-end");
-                // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
-                this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState + 1), groups: this.groups });
 
-                this._timerUpdateEmit(this.roundSettings.turnover);
-                this._runTurnoverTimer();
+                // no entering turnover for finals mode, just advance round and pause
+                if (!this.roundSettings.finalsMode) {
+                    this._timerUpdateEmit(this.roundSettings.turnover);
+                    this._runTurnoverTimer();
+                    // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
+                    this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState + 1), groups: this.groups });
+                } else {
+                    this._clearAllIntervals();
+                    this.betweenRounds = false;
+                    this.io.emit("round-begin", { groupName: this.groups, roundState: this.roundState });
+                    console.log("stage " + (this.roundState + 1) + " begin: " + this.groups[1] + "|" + this.groups[2] + "|" + this.groups[3]);
+                    this.remainingTime = this.roundSettings.timerMode;
+                    this._timerUpdateEmit(this.remainingTime);
+                    this._advanceRoundState();
+                    this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+                }
             }
         }, 1000);
     }
@@ -120,6 +136,7 @@ class CompetitionManager {
 
     _advanceRoundState() {
         this.roundState++;
+        console.log(`round state advanced: ${this.roundState}`);
         this.callbacks.onSaveStateToFile(this.roundName, this.roundState, this.remainingTime);
 
         // reset ondeck buckets for each category
@@ -242,6 +259,8 @@ class CompetitionManager {
             this.callbacks.onPlaySound(file);
         }
 
+
+        // write time to timer.txt
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -264,25 +283,31 @@ class CompetitionManager {
 
     // -- public methods -- 
     startTimer() {
-        // 5s countdown on first start
+        // 5s countdown on first start if not in finals mode
         if (!this.roundStarted) {
             console.log(`timer started`);
             this.roundStarted = true;
             this.io.emit("round-start", { roundStarted: this.roundStarted });
-            this.betweenRounds = true;
-            this.remainingTurnoverTime = 6;
-            return this._runTurnoverTimer();
+            if (!this.roundSettings.finalsMode) {
+                this.betweenRounds = true;
+                this.remainingTurnoverTime = 6;
+                return this._runTurnoverTimer();
+            }
+            this._advanceRoundState();
+            this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+            this.io.emit("round-begin");
         }
 
         if (this.timerInterval || this.turnoverInterval) {
             return console.log("timer already running");
         }
-        if (this.betweenRounds) {
+        if (this.betweenRounds && !this.roundSettings.finalsMode) {
             console.log("resuming turnover timer");
             this._runTurnoverTimer();
         } else {
             console.log("resuming timer");
-            this.callbacks.onPlaySound(this.soundMap[60]);
+            // play boop on stage start 
+            this.callbacks.onPlaySound(this.soundMap['boop']);
             if (this.roundSettings.finalsMode && this.nextClimberFlag) {
                 this.nextClimberFlag = false;
                 this._advanceRoundState();
@@ -367,7 +392,7 @@ class CompetitionManager {
         this.io.emit("ondeck-update", {
             roundName: this.roundName,
             ondeck: this.ondeck,
-            roundState: (this.roundState + 1),
+            roundState: (this.roundState),
             groups: this.groups,
             remainingTime: this.remainingTime,
             roundStarted: this.roundStarted
@@ -393,8 +418,14 @@ class CompetitionManager {
     }
 
     updateSettings(newSettings) {
+        // on timerMode change also emit an update to timer display elements
+        if (newSettings.timerMode && this.roundSettings.timerMode !== newSettings.timerMode) {
+            this.remainingTime = newSettings.timerMode;
+            this._timerUpdateEmit(this.remainingTime);
+        }
         Object.assign(this.roundSettings, newSettings);
         console.log(`settings updated: ${JSON.stringify(newSettings)}`);
+        this.io.emit("settings-update", { roundSettings: this.roundSettings });
     }
 
     shutdown() {
