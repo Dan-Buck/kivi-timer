@@ -99,6 +99,15 @@ button:active {
     transform: scale(0.95);
 }
 
+.controls-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 400px;
+}
+
 /* Timer Mode Selection */
 .timer-mode,
 .boulders,
@@ -279,6 +288,9 @@ input[type="text"] {
     /* Slightly darker color on hover */
 }
 
+#toggle-controls {
+    margin-top: 10px;
+}
 
 
 /* Modal Styles */

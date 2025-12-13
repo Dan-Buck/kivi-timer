@@ -200,6 +200,17 @@ function addEventListeners() {
         }
     });
 
+    document.getElementById("toggle-controls").addEventListener("click", (event) => {
+        const settings = document.querySelector(".controls-container");
+        console.log(`settings display: ${settings.style.display}`);
+        if (settings.style.display == "flex") {
+            settings.style.display = "none";
+            console.log("toggled controls");
+        } else {
+            settings.style.display = "flex";
+        }
+    });
+
     // Modal elements
     const modal = document.getElementById("round-state-modal");
     const openModalBtn = document.getElementById("open-modal-btn");
