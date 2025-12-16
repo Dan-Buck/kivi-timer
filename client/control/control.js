@@ -268,10 +268,10 @@ function addEventListeners() {
 }
 
 function updateInfo(data) {
-    const { roundName, roundSettings, groups, roundState } = data;
+    const { roundName, roundSettings, groups, roundState, betweenRounds } = data;
 
     const stageDisplay = document.querySelector(".stage-display");
-    stageDisplay.textContent = `#${roundState}`;
+    stageDisplay.textContent = `#${(betweenRounds && !roundSettings.finalsMode) ? roundState + 1 : roundState}`;
 
     const roundNameDisplay = document.getElementById("round-name")
     roundNameDisplay.value = roundName;
@@ -346,8 +346,11 @@ function handleStateUpdate(currentState) {
         updateTimer(currentState);
     }
 
+    // Create a copy of currentState and previousState without the 'remainingTime' key
+    const { remainingTime, ...currentStateWithoutTime } = currentState;
+    const { remainingTime: prevRemainingTime, ...previousStateWithoutTime } = previousState;
     // check for round settings, state changes
-    if (JSON.stringify(currentState) !== JSON.stringify(previousState)) {
+    if (JSON.stringify(currentStateWithoutTime) !== JSON.stringify(previousStateWithoutTime)) {
         updateInfo(currentState);
     }
 

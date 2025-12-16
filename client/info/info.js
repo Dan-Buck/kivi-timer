@@ -72,11 +72,11 @@ function updateTimer(data) {
 }
 
 function updateInfo(data) {
-    const { groups, roundName, roundState } = data;
+    const { groups, roundName, roundState, betweenRounds, roundSettings } = data;
 
     const stageDisplay = document.querySelector(".stage-display");
     const groupsDisplay = document.querySelector(".groups-display");
-    stageDisplay.textContent = `Stage # ${roundState}`;
+    stageDisplay.textContent = `Stage # ${(betweenRounds && !roundSettings.finalsMode) ? roundState + 1 : roundState}`;
 
     let groupList = [];
     for (const category in groups) {
@@ -111,7 +111,8 @@ function handleStateUpdate(currentState) {
 
     if (currentState.roundState !== previousState.roundState ||
         currentState.roundName !== previousState.roundName ||
-        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups)
+        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups) ||
+        currentState.betweenRounds !== previousState.betweenRounds
     ) {
         updateInfo(currentState);
     }

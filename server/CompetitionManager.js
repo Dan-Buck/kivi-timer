@@ -90,8 +90,8 @@ class CompetitionManager {
                 if (!this.roundSettings.finalsMode) {
                     this._timerUpdateEmit(this.roundSettings.turnover);
                     this._runTurnoverTimer();
-                    // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
-                    this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState + 1), groups: this.groups });
+                    // emit ondeck-update here for clients to do their own roundState +1 spoofing
+                    this.io.emit("ondeck-update", { betweenRounds: this.betweenRounds, roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState), groups: this.groups });
                 } else {
                     this._clearAllIntervals();
                     this.betweenRounds = false;
@@ -136,7 +136,6 @@ class CompetitionManager {
 
     _advanceRoundState() {
         this.roundState++;
-        console.log(`round state advanced: ${this.roundState}`);
         this.callbacks.onSaveStateToFile(this.roundName, this.roundState, this.remainingTime);
 
         // reset ondeck buckets for each category
@@ -310,7 +309,6 @@ class CompetitionManager {
             this.callbacks.onPlaySound(this.soundMap['boop']);
             if (this.roundSettings.finalsMode && this.nextClimberFlag) {
                 this.nextClimberFlag = false;
-                this._advanceRoundState();
                 this.io.emit("round-begin");
                 this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
             }
@@ -336,11 +334,12 @@ class CompetitionManager {
         this.roundStarted = true;
         this.io.emit("round-end");
         this.nextClimberFlag = true;
-        // spoof roundState +1 for screens
+        this._advanceRoundState();
+        // removed spoof, now send true state
         this.io.emit("ondeck-update", {
             roundName: this.roundName,
             ondeck: this.ondeck,
-            roundState: (this.roundState + 1),
+            roundState: (this.roundState),
             groups: this.groups,
             remainingTime: this.remainingTime,
             roundStarted: this.roundStarted
@@ -442,7 +441,7 @@ class CompetitionManager {
             groups: this.groups,
             roundSettings: this.roundSettings,
             remainingTime: this.remainingTime,
-            roundStarted: this.roundStarted
+            roundStarted: this.roundStarted,
         };
     }
 
