@@ -20,6 +20,10 @@ function addEventListeners() {
         connectionService.nextClimber();
     });
 
+    document.getElementById("begin-climbing").addEventListener("click", () => {
+        connectionService.beginClimbing();
+    });
+
     // Handle round name form submission
     document.getElementById("round-name-form").addEventListener("submit", (event) => {
         event.preventDefault();
@@ -47,6 +51,28 @@ function addEventListeners() {
         const customValue = parseInt(event.target.value, 10);
         if (!isNaN(customValue) && customValue > 0) {
             connectionService.changeTimerMode(customValue);
+        }
+    });
+
+    document.getElementById("turnover-select").addEventListener("change", (event) => {
+        const selectedValue = event.target.value;
+        const customTimeInput = document.getElementById("custom-turnover");
+
+        if (selectedValue === "custom") {
+            customTimeInput.style.display = "inline-block";
+            customTimeInput.value = ""; // Clear previous input
+            customTimeInput.focus();
+        } else {
+            customTimeInput.value = "";
+            customTimeInput.style.display = "none";
+            connectionService.changeTurnoverTime(parseInt(selectedValue, 10));
+        }
+    });
+
+    document.getElementById("custom-turnover").addEventListener("input", (event) => {
+        const customValue = parseInt(event.target.value, 10);
+        if (!isNaN(customValue) && customValue > 0) {
+            connectionService.changeTurnoverTime(customValue);
         }
     });
 
@@ -92,6 +118,22 @@ function addEventListeners() {
     document.getElementById("finals-climbers-select").addEventListener("change", (event) => {
         const selectedValue = event.target.value;
         connectionService.changeFinalsClimbers(selectedValue);
+    });
+
+    document.getElementById("lead-mode-select").addEventListener("change", (event) => {
+        const selectedValue = event.target.value;
+        const finalsModeSelect = document.getElementById('finals-mode-select');
+        const beginClimbingBtn = document.getElementById('begin-climbing');
+
+        // show "Begin Climbing" button, switch to Finals Mode (for now)
+        if (selectedValue == "false") {
+            beginClimbingBtn.style.display = "none";
+        } else {
+            beginClimbingBtn.style.display = "block";
+            finalsModeSelect.value = "true";
+            finalsModeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        connectionService.changeLeadMode(selectedValue);
     });
 
     document.getElementById("add-groups").addEventListener("click", (event) => {
@@ -202,7 +244,6 @@ function addEventListeners() {
 
     document.getElementById("toggle-controls").addEventListener("click", (event) => {
         const settings = document.querySelector(".controls-container");
-        console.log(`settings display: ${settings.style.display}`);
         if (settings.style.display == "flex") {
             settings.style.display = "none";
             console.log("toggled controls");
@@ -277,14 +318,17 @@ function updateInfo(data) {
     roundNameDisplay.value = roundName;
 
     const timerMode = document.getElementById("timer-select");
+    const turnover = document.getElementById("turnover-select");
     const boulderNumbers = document.getElementById("boulder-select");
     const zoneNumbers = document.getElementById("zone-select");
     const finalsMode = document.getElementById("finals-mode-select");
     const finalsClimbers = document.getElementById("finals-climbers-select");
+    const leadMode = document.getElementById("lead-mode-select");
     boulderNumbers.value = roundSettings.boulders;
     zoneNumbers.value = roundSettings.zones;
     finalsMode.value = roundSettings.finalsMode;
     finalsClimbers.value = roundSettings.finalsClimbers;
+    leadMode.value = roundSettings.leadMode;
 
     const timerOption = timerMode.querySelector(`option[value="${roundSettings.timerMode}"]`);
     if (timerOption) {
@@ -299,6 +343,18 @@ function updateInfo(data) {
         customTimeInput.value = roundSettings.timerMode;
     };
 
+    const turnoverOption = turnover.querySelector(`option[value="${roundSettings.turnover}"]`);
+    const customTurnover = document.getElementById("custom-turnover");
+    if (turnoverOption) {
+        turnover.value = roundSettings.turnover;
+        customTurnover.style.display = "none";
+    }
+    else {
+        turnover.value = "custom";
+        customTurnover.style.display = "inline-block";
+        customTurnover.value = roundSettings.turnover;
+    };
+
     // whether to show "Next Climber button"
     if (finalsMode.value == "false") {
         document.getElementById("next-climber").style.display = "none";
@@ -306,6 +362,13 @@ function updateInfo(data) {
     } else {
         document.getElementById("next-climber").style.display = "block";
         document.querySelector(".finals-climbers").style.display = "flex";
+    }
+
+    // show ? "Begin climbing"
+    if (leadMode.value == "false") {
+        document.getElementById("begin-climbing").style.display = "none";
+    } else {
+        document.getElementById("begin-climbing").style.display = "block";
     }
 
     // populate group names, show uploads container, delete button

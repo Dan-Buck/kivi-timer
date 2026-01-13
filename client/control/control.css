@@ -12,7 +12,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
     background-color: #1e1e2f;
     /* Dark theme */
     color: white;
@@ -79,6 +80,12 @@ button {
     color: #1e1e2f;
 }
 
+#begin-climbing {
+    display: none;
+    background-color: rgb(65, 32, 208);
+    color: #ccc;
+}
+
 #next-climber {
     display: none;
     background-color: purple;
@@ -110,8 +117,10 @@ button:active {
 
 /* Timer Mode Selection */
 .timer-mode,
+.turnover-time,
 .boulders,
-.finals-mode {
+.finals-mode,
+.lead-mode {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -190,6 +199,7 @@ input[type="text"] {
 }
 
 .round-settings-container,
+.round-mode-container,
 #round-name-form {
     display: flex;
     flex-wrap: nowrap;

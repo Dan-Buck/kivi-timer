@@ -26,8 +26,10 @@ function detectAvailablePlayer() {
 }
 
 const playerCmd = detectAvailablePlayer();
+let currentProcess = null;
 
 function playSoundFile(file) {
+    stopSoundFile();
     if (!playerCmd) {
         console.error('No audio player found on this system, switching to Node-based');
         const absPath = path.resolve(file);
@@ -38,9 +40,17 @@ function playSoundFile(file) {
                 console.error(`Node-based playback failed: ${err.message}`);
             });
     }
-    player.play(file, { player: playerCmd }, err => {
+    currentProcess = player.play(file, { player: playerCmd }, err => {
         if (err) console.error(`Could not play sound: ${err.message}`);
+        currentProcess = null;
     });
 }
 
-module.exports = { playSoundFile };
+function stopSoundFile() {
+    if (currentProcess) {
+        currentProcess.kill();
+        currentProcess = null;
+    }
+}
+
+module.exports = { playSoundFile, stopSoundFile };

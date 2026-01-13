@@ -67,8 +67,10 @@ function updateTimer(data) {
 }
 
 function updateMessageDisplay(data) {
-    const { betweenRounds, roundStarted } = data;
+    const { betweenRounds, roundStarted, roundSettings } = data;
+    const leadMode = roundSettings.leadMode;
     const messageContainer = document.querySelector(".message-container");
+    //lead mode switches green/yellow messages TODO
     if (betweenRounds || !roundStarted) {
         showMessage("Go to Climbing Zone:");
         if (!messageContainer) return;

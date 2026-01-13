@@ -21,6 +21,8 @@
         <button id="start-timer">Start/Resume</button>
         <button id="pause-timer">Pause</button>
         <button id="zero-timer">Reset Timer</button>
+        <!-- Begin Climbing hidden until leadMode is on-->
+        <button id="begin-climbing">Begin Climbing</button>
         <!-- Next Climber hidden until finalsMode is on -->
         <button id="next-climber">Next Climber</button>
     </div>
@@ -39,7 +41,7 @@
 
         <div class="round-settings-container">
             <div class="timer-mode">
-                <label for="timer-select">Timer Mode:</label>
+                <label for="timer-select">Stage Time:</label>
                 <select id="timer-select">
                     <option value="300">5 min</option>
                     <option value="240">4 min</option>
@@ -49,6 +51,19 @@
 
                 <!-- Custom Time Input (hidden by default) -->
                 <input type="number" id="custom-time" min="1" placeholder="Enter time (sec)" style="display: none;" />
+            </div>
+
+            <div class="turnover-time">
+                <label for="turnover-select">Turnover:</label>
+                <select id="turnover-select">
+                    <option value="15">15s</option>
+                    <option value="40">40s</option>
+                    <option value="custom">Custom</option>
+                </select>
+
+                <!-- Custom Time Input (hidden by default) -->
+                <input type="number" id="custom-turnover" min="1" placeholder="Enter time (sec)"
+                    style="display: none;" />
             </div>
 
             <div class="boulders">
@@ -74,10 +89,20 @@
                     <option value="2">2</option>
                 </select>
             </div>
+        </div>
 
+        <div class="round-mode-container">
             <div class="finals-mode">
                 <label for="finals-mode-select">Finals Mode:</label>
                 <select id="finals-mode-select">
+                    <option value="false">Off</option>
+                    <option value="true">On</option>
+                </select>
+            </div>
+
+            <div class="lead-mode">
+                <label for="lead-mode-select">Lead Mode:</label>
+                <select id="lead-mode-select">
                     <option value="false">Off</option>
                     <option value="true">On</option>
                 </select>

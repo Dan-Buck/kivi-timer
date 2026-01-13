@@ -1,4 +1,5 @@
 let audioContext;
+let currentSource = null;
 
 export function playSound(path) {
     if (!audioContext) {
@@ -15,8 +16,18 @@ export function playSound(path) {
     }
 }
 
+export function stopSound() {
+    if (currentSource) {
+        currentSource.stop();
+        currentSource.disconnect();
+        currentSource = null;
+    }
+}
+
 async function playAudioBuffer(path) {
     try {
+        stopSound();
+
         const response = await fetch(path);
         const data = await response.arrayBuffer();
         const buffer = await audioContext.decodeAudioData(data);
@@ -24,6 +35,12 @@ async function playAudioBuffer(path) {
         const source = audioContext.createBufferSource();
         source.buffer = buffer;
         source.connect(audioContext.destination);
+        source.onended = () => {
+            if (currentSource === source) {
+                currentSource = null;
+            }
+        };
+        currentSource = source;
         source.start(0);
     } catch (err) {
         console.warn("Error playing sound:", err);

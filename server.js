@@ -15,7 +15,7 @@ const ngrok = require("ngrok");
 const settings = require("./helpers/config");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
-const { playSoundFile } = require("./helpers/serverSound");
+const { playSoundFile, stopSoundFile } = require("./helpers/serverSound");
 const CompetitionManager = require("./server/CompetitionManager");
 
 //get settings/configs
@@ -116,6 +116,7 @@ io.on("connection", (socket) => {
     socket.on("pause-timer", () => competition.pauseTimer());
     socket.on("zero-timer", () => competition.zeroTimer());
     socket.on("next-climber", () => competition.nextClimber());
+    socket.on("begin-climbing", () => competition.beginClimbing());
     socket.on("round-name-update", (newRoundName) => competition.updateRoundName(newRoundName));
     socket.on("group-name-update", (data) => competition.updateGroupName(data));
     socket.on("group-category-change", (data) => competition.updateGroupCategory(data));
@@ -124,16 +125,22 @@ io.on("connection", (socket) => {
 
     // Settings updates
     socket.on("change-timer-mode", (mode) => competition.updateSettings({ timerMode: mode }));
+    socket.on("change-turnover-time", (mode) => competition.updateSettings({ turnover: mode }));
     socket.on("change-boulder-number", (boulders) => competition.updateSettings({ boulders: boulders }));
     socket.on("change-zone-number", (zones) => competition.updateSettings({ zones: zones }));
     socket.on("change-finals-mode", (mode) => competition.updateSettings({ finalsMode: (mode === "true") }));
     socket.on("change-finals-climbers", (climbers) => competition.updateSettings({ finalsClimbers: climbers }));
+    socket.on("change-lead-mode", (mode) => competition.updateSettings({ leadMode: (mode === "true") }));
 });
 
 const handlePlaySound = (file) => {
-    const localPath = path.join(__dirname, "client", file);
-    playSoundFile(localPath);
-    io.emit("play-sound", { path: file });
+    if (file === "MUTE") {
+        stopSoundFile();
+    } else {
+        const localPath = path.join(__dirname, "client", file);
+        playSoundFile(localPath);
+        io.emit("play-sound", { path: file });
+    }
 };
 
 const handleWriteStatus = (writeString, callback) => {

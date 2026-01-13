@@ -1,5 +1,5 @@
 import { getSocketLink } from "./connections.js";
-import { playSound } from "./audio.js";
+import { playSound, stopSound } from "./audio.js";
 
 // Private vars for service
 let socket;
@@ -52,16 +52,20 @@ async function initialize() {
         updateState({ roundStarted: data.roundStarted });
     });
 
-    socket.on("round-end", () => {
+    socket.on("turnover-begin", () => {
         updateState({ betweenRounds: true });
     });
 
-    socket.on("round-begin", () => {
+    socket.on("stage-begin", () => {
         updateState({ betweenRounds: false });
     });
 
     socket.on("play-sound", (data) => {
         playSound(data.path);
+    });
+
+    socket.on("stop-sound", () => {
+        stopSound();
     });
 
     socket.on("ondeck-update", (data) => {
@@ -106,12 +110,15 @@ export const connectionService = {
     pauseTimer: () => socket.emit("pause-timer"),
     zeroTimer: () => socket.emit("zero-timer"),
     nextClimber: () => socket.emit("next-climber"),
+    beginClimbing: () => socket.emit("begin-climbing"),
     updateRoundName: (name) => socket.emit("round-name-update", name),
     changeTimerMode: (mode) => socket.emit("change-timer-mode", mode),
+    changeTurnoverTime: (mode) => socket.emit("change-turnover-time", mode),
     changeBoulderNumber: (boulders) => socket.emit("change-boulder-number", boulders),
     changeZoneNumber: (zones) => socket.emit("change-zone-number", zones),
     changeFinalsMode: (mode) => socket.emit("change-finals-mode", mode),
     changeFinalsClimbers: (climbers) => socket.emit("change-finals-climbers", climbers),
+    changeLeadMode: (mode) => socket.emit("change-lead-mode", mode),
     updateGroupName: (data) => socket.emit("group-name-update", data),
     changeGroupCategory: (data) => socket.emit("group-category-change", data),
     resetRound: () => socket.emit("reset-round"),
