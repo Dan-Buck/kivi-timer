@@ -43,9 +43,23 @@ function addEventListeners() {
 }
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime } = data;
+    const { leadMode, turnover } = roundSettings;
 
     if (timerElement) {
+        // handle lead mode on load/refresh
+        if (leadMode && betweenRounds) {
+            let seconds = Math.floor(turnover);
+            if (remainingTurnoverTime != 0) {
+                seconds = Math.floor(remainingTurnoverTime);
+            }
+            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.fontSize = "50vh";
+            timerElement.style.color = "gray";
+            timerElement.style.fontWeight = 600;
+            return;
+        }
+
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
         let firstDigits, secondDigits;

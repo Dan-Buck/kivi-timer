@@ -49,15 +49,14 @@ class CompetitionManager {
         this.remainingTime = 0;
         this.remainingTurnoverTime = 0;
         if (this.roundSettings.leadMode) {
-            this.betweenRounds = true;
             this.io.emit("turnover-begin");
             this._timerUpdateEmit(this.roundSettings.turnover);
         } else {
             this.remainingTime = this.roundSettings.timerMode;
             this._timerUpdateEmit(this.remainingTime);
-            this.betweenRounds = false;
         }
 
+        this.betweenRounds = true;
         this.roundStarted = false;
         this.nextClimberFlag = false;
         this.pauseFlag = false;
@@ -273,7 +272,7 @@ class CompetitionManager {
             return
         }
 
-        this.io.emit("timer-update", { remainingTime: time });
+        this.io.emit("timer-update", { remainingTime: time, remainingTurnoverTime: this.remainingTurnoverTime });
 
         // play sound out of the server, and emit to clients at configured times
         const file = this.soundMap[time];
@@ -313,11 +312,13 @@ class CompetitionManager {
         }
         // on activating lead mode, emit turnover instead to timer displays
         if (newLeadMode && !oldLeadMode) {
+            this.remainingTurnoverTime = oldTurnover;
             this._timerUpdateEmit(oldTurnover);
         } else if (newLeadMode === false && oldLeadMode) {
             this._timerUpdateEmit(this.roundSettings.timerMode);
         }
         if (oldLeadMode && newTurnover && newTurnover != oldTurnover) {
+            this.remainingTurnoverTime = newTurnover;
             this._timerUpdateEmit(newTurnover);
         }
     }
@@ -358,6 +359,8 @@ class CompetitionManager {
                 this.betweenRounds = true;
                 this.remainingTurnoverTime = 6;
                 return this._runTurnoverTimer();
+            } else {
+                this.betweenRounds = false;
             }
 
             // handle finals mode startup
@@ -554,6 +557,7 @@ class CompetitionManager {
             groups: this.groups,
             roundSettings: this.roundSettings,
             remainingTime: this.remainingTime,
+            remainingTurnoverTime: this.remainingTurnoverTime,
             roundStarted: this.roundStarted,
         };
     }

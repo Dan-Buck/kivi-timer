@@ -41,9 +41,24 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime } = data;
+    const { leadMode, turnover } = roundSettings;
+
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
+        // handle lead mode on load/refresh
+        if (leadMode && betweenRounds) {
+            let seconds = Math.floor(turnover);
+            if (remainingTurnoverTime != 0) {
+                seconds = Math.floor(remainingTurnoverTime);
+            }
+            document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
+            document.documentElement.style.setProperty("--timer-weight-scale", "0.85"); // ~6/7
+            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+            timerElement.style.color = "gray";
+            return;
+        }
+
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
         let firstDigits, secondDigits;
