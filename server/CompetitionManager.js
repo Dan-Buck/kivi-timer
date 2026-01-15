@@ -8,7 +8,7 @@ class CompetitionManager {
         // timer management vars
         this.timerInterval = null;
         this.turnoverInterval = null;
-        this.betweenRounds = false;
+        this.betweenRounds = true;
         this.roundStarted = false;
         this.remainingTime = 0;
         this.remainingTurnoverTime = 0;
@@ -60,6 +60,7 @@ class CompetitionManager {
         this.roundStarted = false;
         this.nextClimberFlag = false;
         this.pauseFlag = false;
+        this.startInStageTime = 0;
         this.io.emit("round-start", { roundStarted: this.roundStarted });
         this._clearAllIntervals();
         this.io.emit("settings-update", { roundSettings: this.roundSettings });
@@ -349,7 +350,7 @@ class CompetitionManager {
         }
 
         // if round hasn't started, handle setup
-        if (!this.roundStarted) {
+        if (!this.roundStarted && this.roundState === 0) {
             console.log(`round started`);
             this.roundStarted = true;
             this.io.emit("round-start", { roundStarted: this.roundStarted });
@@ -383,7 +384,7 @@ class CompetitionManager {
         this.callbacks.onPlaySound(this.soundMap['boop']);
 
         // when starting a normal lead mode round
-        if (this.roundSettings.leadMode) {
+        if (this.roundSettings.leadMode && this.startInStageTime == 0) {
             console.log("normal lead stage begun");
             return this._runTurnoverTimer();
         }

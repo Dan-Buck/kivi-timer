@@ -53,7 +53,7 @@ function updateTimer(data) {
             if (remainingTurnoverTime != 0) {
                 seconds = Math.floor(remainingTurnoverTime);
             }
-            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
+            timerElement.textContent = `Start: ${seconds.toString().padStart(2, "0")}`;
             timerElement.style.fontSize = "50vh";
             timerElement.style.color = "gray";
             timerElement.style.fontWeight = 600;
