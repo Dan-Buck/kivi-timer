@@ -57,7 +57,7 @@ app.use("/socket.io", express.static(path.join(__dirname, "node_modules", "socke
 // transit area screen handler
 app.use("/transit", express.static(path.join(__dirname, "./client/transit")));
 
-// gen info handler
+// info screen handler
 app.use("/info", express.static(path.join(__dirname, "./client/info")));
 
 // Middleware to protect control page
@@ -98,6 +98,7 @@ app.get("/athletes", (req, res) => {
     res.json(competition.getAthletes());
 });
 
+// for clients on refresh/connect
 app.get("/round-settings", (req, res) => {
     res.json(competition.getRoundSettings());
 })
@@ -132,6 +133,10 @@ io.on("connection", (socket) => {
     socket.on("change-finals-mode", (mode) => competition.updateSettings({ finalsMode: (mode === "true") }));
     socket.on("change-finals-climbers", (climbers) => competition.updateSettings({ finalsClimbers: climbers }));
     socket.on("change-lead-mode", (mode) => competition.updateSettings({ leadMode: (mode === "true") }));
+
+    socket.on("disconnect", (reason) => {
+        console.log(`Socket disconnected: ${socket.id}, ${reason}`);
+    });
 });
 
 // dependancy-based competition handlers
