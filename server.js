@@ -17,6 +17,7 @@ const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
 const { playSoundFile, stopSoundFile } = require("./helpers/serverSound");
 const CompetitionManager = require("./server/CompetitionManager");
+const createCompetitionHandlers = require("./helpers/competitionHandlers");
 
 //get settings/configs
 const port = settings.port;
@@ -133,24 +134,19 @@ io.on("connection", (socket) => {
     socket.on("change-lead-mode", (mode) => competition.updateSettings({ leadMode: (mode === "true") }));
 });
 
-const handlePlaySound = (file) => {
-    if (file === "MUTE") {
-        stopSoundFile();
-    } else {
-        const localPath = path.join(__dirname, "client", file);
-        playSoundFile(localPath);
-        io.emit("play-sound", { path: file });
-    }
-};
-
-const handleWriteStatus = (writeString, callback) => {
-    const filePath = path.join(__dirname, "misc/timer.txt");
-    fsp.writeFile(filePath, writeString, "utf-8").then(() => callback(null)).catch(callback);
-};
-
-const handleSaveStateToFile = (roundName, roundState, remainingTime) => {
-    saveStateToFile(roundName, roundState, remainingTime);
-}
+// dependancy-based competition handlers
+const {
+    handlePlaySound,
+    handleWriteStatus,
+    handleSaveStateToFile
+} = createCompetitionHandlers({
+    io,
+    baseDir: __dirname,
+    playSoundFile,
+    stopSoundFile,
+    fsp,
+    saveStateToFile
+});
 
 const competition = new CompetitionManager(
     io,
