@@ -6,8 +6,11 @@ let previousState = {};
 // update ondeck display
 function updateOndeck(data) {
 
-    const { ondeck, groups, roundState, roundName } = data;
+    const { ondeck, groups, roundState, roundName, roundSettings } = data;
+    const leadMode = roundSettings.leadMode;
 
+    let climbType = "Boulder";
+    if (leadMode) climbType = "Route";
     const container = document.querySelector(".ondeck-container");
     for (const category in ondeck) {
         let categoryLabel = document.querySelector(`.ondeck-label-${category}`);
@@ -37,7 +40,7 @@ function updateOndeck(data) {
         ondeck[category].forEach(({ boulder, athlete }) => {
             const entry = document.createElement("div");
             entry.classList.add("ondeck-entry");
-            entry.innerHTML = `<u>Boulder ${boulder}</u><br>${athlete ? `${athlete.id}<br>${athlete.lastName}` : "-"}`;
+            entry.innerHTML = `<u>${climbType} ${boulder}</u><br>${athlete ? `${athlete.id}<br>${athlete.lastName}` : "-"}`;
             categoryContainer.appendChild(entry);
         });
     }
@@ -81,7 +84,22 @@ function updateMessageDisplay(data) {
     const { betweenRounds, roundStarted, roundSettings } = data;
     const leadMode = roundSettings.leadMode;
     const messageContainer = document.querySelector(".message-container");
-    //lead mode switches green/yellow messages TODO
+    //lead mode switches green/yellow messages 
+
+    if (leadMode) {
+        if (betweenRounds) {
+            showMessage("Go to Transit Zone:");
+            if (!messageContainer) return;
+            messageContainer.style.background = "yellow";
+            messageContainer.style.color = "black";
+        } else {
+            showMessage("Go to Climbing Zone:");
+            if (!messageContainer) return;
+            messageContainer.style.background = "green";
+        }
+        return;
+    }
+
     if (betweenRounds || !roundStarted) {
         showMessage("Go to Climbing Zone:");
         if (!messageContainer) return;
