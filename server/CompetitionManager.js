@@ -396,6 +396,7 @@ class CompetitionManager {
         // if "Next Climber" button was used, handle round turnover stuff
         if (this.roundSettings.finalsMode && this.nextClimberFlag) {
             this.nextClimberFlag = false;
+            this.betweenRounds = false;
             this.io.emit("stage-begin");
             this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
         }
