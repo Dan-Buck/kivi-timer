@@ -386,12 +386,12 @@ function updateInfo(data) {
 }
 
 function updateTimer(data) {
-    const { remainingTime, roundStarted, betweenRounds } = data;
+    const { remainingTime, roundStarted, betweenRounds, nextClimberFlag } = data;
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
-        if (betweenRounds && roundStarted) {
+        if (betweenRounds && roundStarted && !nextClimberFlag) {
             timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
         } else {
             timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;

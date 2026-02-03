@@ -47,7 +47,7 @@ function updateOndeck(data) {
 }
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
     const { leadMode, turnover } = roundSettings;
     const timerElement = document.querySelector(".timer");
 
@@ -64,7 +64,7 @@ function updateTimer(data) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted) {
+        if (betweenRounds && roundStarted && !nextClimberFlag) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
         } else {
             // check for hour+ timer, convert to HH:MM

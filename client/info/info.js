@@ -41,7 +41,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
     const { leadMode, turnover } = roundSettings;
 
     const timerElement = document.querySelector(".timer");
@@ -62,7 +62,7 @@ function updateTimer(data) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted) {
+        if (betweenRounds && roundStarted && !nextClimberFlag) {
             // smaller scale + lighter weight
             document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
             document.documentElement.style.setProperty("--timer-weight-scale", "0.85"); // ~6/7

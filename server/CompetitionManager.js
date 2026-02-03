@@ -564,6 +564,7 @@ class CompetitionManager {
             remainingTime: this.remainingTime,
             remainingTurnoverTime: this.remainingTurnoverTime,
             roundStarted: this.roundStarted,
+            nextClimberFlag: this.nextClimberFlag,
         };
     }
 

@@ -43,7 +43,7 @@ function addEventListeners() {
 }
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
     const { leadMode, turnover } = roundSettings;
 
     if (timerElement) {
@@ -63,7 +63,7 @@ function updateTimer(data) {
         const minutes = Math.floor(remainingTime / 60);
         const seconds = Math.floor(remainingTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted) {
+        if (betweenRounds && roundStarted && !nextClimberFlag) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
             timerElement.style.fontSize = "50vh";
             timerElement.style.color = "gray";
