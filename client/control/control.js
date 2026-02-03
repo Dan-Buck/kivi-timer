@@ -305,10 +305,12 @@ function addEventListeners() {
 }
 
 function updateInfo(data) {
-    const { roundName, roundSettings, groups, roundState, betweenRounds } = data;
+    const { roundName, roundSettings, groups, roundState, betweenRounds, selectRoundFlag } = data;
+    const stageNumber = ((betweenRounds && !roundSettings.finalsMode) || selectRoundFlag) ? roundState + 1 : roundState;
+
 
     const stageDisplay = document.querySelector(".stage-display");
-    stageDisplay.textContent = `#${(betweenRounds && !roundSettings.finalsMode) ? roundState + 1 : roundState}`;
+    stageDisplay.textContent = `#${stageNumber}`;
 
     const roundNameDisplay = document.getElementById("round-name")
     roundNameDisplay.value = roundName;

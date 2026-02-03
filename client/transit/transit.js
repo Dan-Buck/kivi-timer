@@ -6,8 +6,10 @@ let previousState = {};
 // update ondeck display
 function updateOndeck(data) {
 
-    const { ondeck, groups, roundState, betweenRounds, roundName, roundSettings } = data;
+    const { ondeck, groups, roundState, betweenRounds, roundSettings, selectRoundFlag } = data;
     const leadMode = roundSettings.leadMode;
+
+    const stageNumber = ((betweenRounds && !roundSettings.finalsMode) || selectRoundFlag) ? roundState + 1 : roundState;
 
     let climbType = "Boulder";
     if (leadMode) climbType = "Route";
@@ -33,7 +35,7 @@ function updateOndeck(data) {
             continue
         };
         categoryLabel.style.display = "block";
-        categoryLabel.textContent = `${groups[category]} - Stage # ${(betweenRounds && !roundSettings.finalsMode) ? roundState + 1 : roundState}`;
+        categoryLabel.textContent = `${groups[category]} - Stage # ${stageNumber}`;
 
         categoryContainer.innerHTML = ""; // Clear existing content
 

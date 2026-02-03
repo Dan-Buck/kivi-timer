@@ -87,11 +87,12 @@ function updateTimer(data) {
 }
 
 function updateInfo(data) {
-    const { groups, roundName, roundState, betweenRounds, roundSettings } = data;
+    const { groups, roundName, roundState, betweenRounds, roundSettings, selectRoundFlag } = data;
+    const stageNumber = ((betweenRounds && !roundSettings.finalsMode) || selectRoundFlag) ? roundState + 1 : roundState;
 
     const stageDisplay = document.querySelector(".stage-display");
     const groupsDisplay = document.querySelector(".groups-display");
-    stageDisplay.textContent = `Stage # ${(betweenRounds && !roundSettings.finalsMode) ? roundState + 1 : roundState}`;
+    stageDisplay.textContent = `Stage # ${stageNumber}`;
 
     let groupList = [];
     for (const category in groups) {

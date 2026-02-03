@@ -16,6 +16,7 @@ class CompetitionManager {
         this.roundState = 0;
         this.roundName = "";
         this.startInStageTime = 0;
+        this.selectRoundFlag = false;
         this.nextClimberFlag = false; // for finalsMode
         this.writeErrorFlag = false;
 
@@ -59,6 +60,7 @@ class CompetitionManager {
         this.betweenRounds = true;
         this.roundStarted = false;
         this.nextClimberFlag = false;
+        this.selectRoundFlag = false;
         this.pauseFlag = false;
         this.startInStageTime = 0;
         this.io.emit("round-start", { roundStarted: this.roundStarted });
@@ -259,9 +261,10 @@ class CompetitionManager {
         for (let step = 0; step < steps; step++) {
             this._advanceRoundState();
         }
-        // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic?
+        // emit ondeck-update here just to fake roundstate advance for clarity. TBD fix logic? //
         if (!data.time) {
-            this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState + 1), groups: this.groups });
+            this.selectRoundFlag = true;
+            this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState), groups: this.groups, selectRoundFlag: this.selectRoundFlag });
         } else {
             this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
         }
@@ -350,23 +353,24 @@ class CompetitionManager {
         }
 
         // if round hasn't started, handle setup
-        if (!this.roundStarted && this.roundState === 0) {
+        if ((!this.roundStarted && this.roundState === 0) || this.selectRoundFlag) {
             console.log(`round started`);
             this.roundStarted = true;
             this.io.emit("round-start", { roundStarted: this.roundStarted });
 
             // go to 5s countdown on first start if not in finals mode
-            if (!this.roundSettings.finalsMode) {
+            if (!this.roundSettings.finalsMode && !this.selectRoundFlag) {
                 this.betweenRounds = true;
                 this.remainingTurnoverTime = 6;
                 return this._runTurnoverTimer();
             } else {
                 this.betweenRounds = false;
+                this.selectRoundFlag = false;
             }
 
             // handle finals mode startup
             this._advanceRoundState();
-            this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+            this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups, selectRoundFlag: this.selectRoundFlag });
             this.io.emit("stage-begin");
 
             // for now, lead mode also uses finals mode
