@@ -88,6 +88,7 @@ app.get("/round-status", (req, res) => {
 app.post("/athletes", (req, res) => {
     const result = competition.handleAthleteUpload(req.body);
     if (result.error) {
+        console.log(`athlete upload error: ${result.error}`);
         return res.status(400).json({ error: result.error });
     }
     res.status(200).json({ message: result.message });

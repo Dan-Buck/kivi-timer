@@ -442,6 +442,8 @@ class CompetitionManager {
         });
         if (this.roundSettings.leadMode) {
             this._timerUpdateEmit(this.roundSettings.turnover);
+        } else {
+            this.io.emit("stage-begin");
         }
     }
 
@@ -514,6 +516,8 @@ class CompetitionManager {
         });
         if (this.roundSettings.leadMode) {
             this._timerUpdateEmit(this.roundSettings.turnover);
+        } else {
+            this.io.emit("stage-begin");
         }
     }
 

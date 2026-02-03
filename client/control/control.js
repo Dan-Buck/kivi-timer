@@ -193,17 +193,13 @@ function addEventListeners() {
                         groupNumber: groupDesig
                     })
                 })
-                    .then(response => {
-                        if (!response.ok) {
-                            alert(`Upload not successful, please try again.`);
-                        } else {
-                            alert("Upload successful!");
-                        }
+                    .then(async response => {
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error);
+                        return data;
                     })
-                    .catch(error => {
-                        console.error("Error sending athlete data:", error);
-                        alert("Upload not successful, please try again.");
-                    });
+                    .then(() => alert("Upload successful!"))
+                    .catch(err => alert(`Upload not successful: ${err.message}`));
             };
 
             reader.readAsText(file);
