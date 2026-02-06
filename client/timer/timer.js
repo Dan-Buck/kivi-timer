@@ -1,5 +1,6 @@
 import { playSound } from "../helpers/audio.js";
 import { connectionService } from "../helpers/connectionService.js";
+import { checkIfTurnover } from "../helpers/utils.js";
 
 const timerElement = document.querySelector(".timer");
 const fontSize = timerElement.style.fontSize || getComputedStyle(timerElement).fontSize;
@@ -43,27 +44,16 @@ function addEventListeners() {
 }
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
-    const { leadMode, turnover } = roundSettings;
+    const { remainingTime, remainingTurnoverTime } = data;
 
     if (timerElement) {
-        // handle lead mode on load/refresh
-        if (leadMode && betweenRounds) {
-            let seconds = Math.floor(turnover);
-            if (remainingTurnoverTime != 0) {
-                seconds = Math.floor(remainingTurnoverTime);
-            }
-            timerElement.textContent = `Start: ${seconds.toString().padStart(2, "0")}`;
-            timerElement.style.fontSize = "50vh";
-            timerElement.style.color = "gray";
-            timerElement.style.fontWeight = 600;
-            return;
-        }
+        const useTurnoverDisplay = checkIfTurnover(data);
+        let displayTime = (useTurnoverDisplay) ? remainingTurnoverTime : remainingTime;
 
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = Math.floor(remainingTime % 60);
+        const minutes = Math.floor(displayTime / 60);
+        const seconds = Math.floor(displayTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted && !nextClimberFlag) {
+        if (useTurnoverDisplay) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
             timerElement.style.fontSize = "50vh";
             timerElement.style.color = "gray";

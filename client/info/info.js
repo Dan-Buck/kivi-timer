@@ -1,6 +1,6 @@
 import { connectionService } from "../helpers/connectionService.js";
 import { LAYOUT_PRESETS } from "../helpers/stylePresets.js";
-
+import { mergeState, checkIfTurnover } from "../helpers/utils.js";
 
 let previousState = {};
 
@@ -41,28 +41,17 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
-    const { leadMode, turnover } = roundSettings;
+    const { remainingTime, remainingTurnoverTime } = data;
 
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
-        // handle lead mode on load/refresh
-        if (leadMode && betweenRounds) {
-            let seconds = Math.floor(turnover);
-            if (remainingTurnoverTime != 0) {
-                seconds = Math.floor(remainingTurnoverTime);
-            }
-            document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
-            document.documentElement.style.setProperty("--timer-weight-scale", "0.85"); // ~6/7
-            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-            timerElement.style.color = "gray";
-            return;
-        }
+        const useTurnoverDisplay = checkIfTurnover(data);
+        let displayTime = (useTurnoverDisplay) ? remainingTurnoverTime : remainingTime;
 
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = Math.floor(remainingTime % 60);
+        const minutes = Math.floor(displayTime / 60);
+        const seconds = Math.floor(displayTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted && !nextClimberFlag) {
+        if (useTurnoverDisplay) {
             // smaller scale + lighter weight
             document.documentElement.style.setProperty("--timer-font-scale", "0.83");  // 5/6
             document.documentElement.style.setProperty("--timer-weight-scale", "0.85"); // ~6/7
@@ -120,21 +109,25 @@ function applyPreset(name) {
     localStorage.setItem("layoutPreset", name);
 }
 
-function handleStateUpdate(currentState) {
-    if (currentState.remainingTime !== previousState.remainingTime) {
-        updateTimer(currentState);
+function handleStateUpdate(incomingState) {
+    const nextState = mergeState(previousState, incomingState);
+
+    if (nextState.remainingTime !== previousState.remainingTime) {
+        updateTimer(nextState);
     }
 
-    if (currentState.roundState !== previousState.roundState ||
-        currentState.roundName !== previousState.roundName ||
-        JSON.stringify(currentState.groups) !== JSON.stringify(previousState.groups) ||
-        currentState.betweenRounds !== previousState.betweenRounds
+    if (
+        nextState.roundState !== previousState.roundState ||
+        nextState.roundName !== previousState.roundName ||
+        JSON.stringify(nextState.groups) !== JSON.stringify(previousState.groups) ||
+        nextState.betweenRounds !== previousState.betweenRounds
     ) {
-        updateInfo(currentState);
+        updateInfo(nextState);
     }
 
-    previousState = JSON.parse(JSON.stringify(currentState));
+    previousState = structuredClone(nextState);
 }
+
 
 function main() {
     addEventListeners();

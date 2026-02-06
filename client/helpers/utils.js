@@ -24,3 +24,19 @@ export function csvError(err) {
     )
     return;
 }
+
+export function mergeState(prev, incoming) {
+    return {
+        ...prev,
+        ...incoming,
+        groups: incoming.groups ?? prev.groups,
+        roundSettings: incoming.roundSettings ?? prev.roundSettings,
+    };
+}
+
+export function checkIfTurnover(data) {
+    const { betweenRounds, roundStarted, roundSettings, nextClimberFlag } = data;
+    const { leadMode } = roundSettings;
+    return ((betweenRounds && roundStarted && !nextClimberFlag) || (leadMode && betweenRounds)) ? true : false;
+
+}

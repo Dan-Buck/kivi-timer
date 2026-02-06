@@ -1,4 +1,4 @@
-import { csvToJson, csvError } from "../helpers/utils.js";
+import { csvToJson, csvError, checkIfTurnover } from "../helpers/utils.js";
 import { connectionService } from "../helpers/connectionService.js";
 
 let previousState = {};
@@ -388,12 +388,18 @@ function updateInfo(data) {
 }
 
 function updateTimer(data) {
-    const { remainingTime, roundStarted, betweenRounds, nextClimberFlag } = data;
+    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
+    const { leadMode, turnover } = roundSettings;
+
     const timerElement = document.querySelector(".timer");
     if (timerElement) {
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = Math.floor(remainingTime % 60);
-        if (betweenRounds && roundStarted && !nextClimberFlag) {
+
+        const useTurnoverDisplay = checkIfTurnover(data);
+        let displayTime = (useTurnoverDisplay) ? remainingTurnoverTime : remainingTime;
+
+        const minutes = Math.floor(displayTime / 60);
+        const seconds = Math.floor(displayTime % 60);
+        if (useTurnoverDisplay) {
             timerElement.textContent = `~ ${seconds.toString().padStart(2, "0")}`;
         } else {
             timerElement.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -403,7 +409,7 @@ function updateTimer(data) {
 
 function handleStateUpdate(currentState) {
     // check for timer change 
-    if (currentState.remainingTime !== previousState.remainingTime) {
+    if ((currentState.remainingTime !== previousState.remainingTime) || (currentState.remainingTurnoverTime !== previousState.remainingTurnoverTime)) {
         updateTimer(currentState);
     }
 

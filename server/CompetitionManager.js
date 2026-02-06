@@ -15,7 +15,6 @@ class CompetitionManager {
         this.pauseFlag = false;
         this.roundState = 0;
         this.roundName = "";
-        this.startInStageTime = 0;
         this.selectRoundFlag = false;
         this.nextClimberFlag = false; // for finalsMode
         this.writeErrorFlag = false;
@@ -51,6 +50,7 @@ class CompetitionManager {
         this.remainingTurnoverTime = 0;
         if (this.roundSettings.leadMode) {
             this.io.emit("turnover-begin");
+            this.remainingTurnoverTime = this.roundSettings.turnover;
             this._timerUpdateEmit(this.roundSettings.turnover);
         } else {
             this.remainingTime = this.roundSettings.timerMode;
@@ -62,7 +62,6 @@ class CompetitionManager {
         this.nextClimberFlag = false;
         this.selectRoundFlag = false;
         this.pauseFlag = false;
-        this.startInStageTime = 0;
         this.io.emit("round-start", { roundStarted: this.roundStarted });
         this._clearAllIntervals();
         this.io.emit("settings-update", { roundSettings: this.roundSettings });
@@ -109,12 +108,7 @@ class CompetitionManager {
                 }
 
                 // no entering turnover for boulder finals mode, just advance round and pause
-                if (!this.roundSettings.finalsMode) {
-                    this._timerUpdateEmit(this.roundSettings.turnover);
-                    this._runTurnoverTimer();
-                    // emit ondeck-update here for clients to do their own roundState +1 spoofing
-                    this.io.emit("ondeck-update", { betweenRounds: this.betweenRounds, roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState), groups: this.groups });
-                } else {
+                if (this.roundSettings.finalsMode) {
                     this._clearAllIntervals();
                     this.betweenRounds = false;
                     this.io.emit("stage-begin", { groupName: this.groups, roundState: this.roundState });
@@ -123,6 +117,11 @@ class CompetitionManager {
                     this._timerUpdateEmit(this.remainingTime);
                     this._advanceRoundState();
                     this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+                } else {
+                    this._timerUpdateEmit(this.roundSettings.turnover);
+                    this._runTurnoverTimer();
+                    // emit ondeck-update here for clients to do their own roundState +1 spoofing
+                    this.io.emit("ondeck-update", { betweenRounds: this.betweenRounds, roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState), groups: this.groups });
                 }
             }
         }, 1000);
@@ -141,19 +140,15 @@ class CompetitionManager {
                 this.betweenRounds = false;
                 this.io.emit("stage-begin", { groupName: this.groups, roundState: this.roundState });
                 console.log("stage " + (this.roundState + 1) + " begin: " + this.groups[1] + "|" + this.groups[2] + "|" + this.groups[3]);
-                if (this.startInStageTime != 0) {
-                    this.remainingTime = this.startInStageTime;
-                    this._timerUpdateEmit(this.remainingTime);
-                    this.startInStageTime = 0;
-                } else {
-                    this.remainingTime = this.roundSettings.timerMode;
-                    this._timerUpdateEmit(this.remainingTime);
-                    // lead mode will advance roundstate on stage end
-                    if (!this.roundSettings.leadMode) {
-                        this._advanceRoundState();
-                    }
-                    this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+
+                this.remainingTime = this.roundSettings.timerMode;
+                this._timerUpdateEmit(this.remainingTime);
+                // lead mode will advance roundstate on stage end
+                if (!this.roundSettings.leadMode) {
+                    this._advanceRoundState();
                 }
+                this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
+
                 this._runTimer();
             }
         }, 1000);
@@ -161,6 +156,7 @@ class CompetitionManager {
 
     _advanceRoundState() {
         this.roundState++;
+        console.log(`roundstate advanced: ${this.roundState}`);
         this.callbacks.onSaveStateToFile(this.roundName, this.roundState, this.remainingTime);
 
         // reset ondeck buckets for each category
@@ -317,10 +313,14 @@ class CompetitionManager {
         // on activating lead mode, emit turnover instead to timer displays
         if (newLeadMode && !oldLeadMode) {
             this.remainingTurnoverTime = oldTurnover;
+            this.io.emit("turnover-begin");
+            this.io.emit("settings-update", { leadMode: newLeadMode });
             this._timerUpdateEmit(oldTurnover);
         } else if (newLeadMode === false && oldLeadMode) {
+            this.io.emit("stage-begin");
             this._timerUpdateEmit(this.roundSettings.timerMode);
         }
+        // changing turnover with leadmode on
         if (oldLeadMode && newTurnover && newTurnover != oldTurnover) {
             this.remainingTurnoverTime = newTurnover;
             this._timerUpdateEmit(newTurnover);
@@ -388,7 +388,7 @@ class CompetitionManager {
         this.callbacks.onPlaySound(this.soundMap['boop']);
 
         // when starting a normal lead mode round
-        if (this.roundSettings.leadMode && this.startInStageTime == 0) {
+        if (this.roundSettings.leadMode) {
             console.log("normal lead stage begun");
             return this._runTurnoverTimer();
         }
@@ -534,9 +534,8 @@ class CompetitionManager {
         this.roundState = 0;
         if (data.time) {
             this.remainingTime = data.time;
-            this.startInStageTime = data.time;
-            this.roundStarted = false;
-            this.io.emit("round-start", { roundSettings: this.roundStarted });
+            this.roundStarted = true;
+            this.io.emit("round-start", { roundStarted: this.roundStarted });
             this.betweenRounds = false;
             this.io.emit("stage-begin", { groupName: this.groups, roundState: this.roundState });
             this._timerUpdateEmit(this.remainingTime);

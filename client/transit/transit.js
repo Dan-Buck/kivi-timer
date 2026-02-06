@@ -1,4 +1,5 @@
 import { connectionService } from "../helpers/connectionService.js";
+import { checkIfTurnover } from "../helpers/utils.js";
 
 // for diffing state changes with new connection service management 
 let previousState = {};
@@ -49,24 +50,17 @@ function updateOndeck(data) {
 }
 
 function updateTimer(data) {
-    const { remainingTime, betweenRounds, roundStarted, roundSettings, remainingTurnoverTime, nextClimberFlag } = data;
-    const { leadMode, turnover } = roundSettings;
+    const { remainingTime, remainingTurnoverTime } = data;
     const timerElement = document.querySelector(".timer");
 
     if (timerElement) {
-        // handle lead mode on load/refresh
-        if (leadMode && betweenRounds) {
-            let seconds = Math.floor(turnover);
-            if (remainingTurnoverTime != 0) {
-                seconds = Math.floor(remainingTurnoverTime);
-            }
-            timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
-            return;
-        }
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = Math.floor(remainingTime % 60);
+        const useTurnoverDisplay = checkIfTurnover(data);
+        let displayTime = (useTurnoverDisplay) ? remainingTurnoverTime : remainingTime;
+
+        const minutes = Math.floor(displayTime / 60);
+        const seconds = Math.floor(displayTime % 60);
         let firstDigits, secondDigits;
-        if (betweenRounds && roundStarted && !nextClimberFlag) {
+        if (useTurnoverDisplay) {
             timerElement.textContent = `Start ${seconds.toString().padStart(2, "0")}`;
         } else {
             // check for hour+ timer, convert to HH:MM
