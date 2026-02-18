@@ -28,7 +28,7 @@ function addEventListeners() {
     document.getElementById("submit-password").addEventListener("click", () => {
         const password = document.getElementById("password-input").value;
 
-        fetch("/control", {
+        fetch("/control/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ password }),
@@ -49,6 +49,7 @@ function updateTimer(data) {
     if (timerElement) {
         const useTurnoverDisplay = checkIfTurnover(data);
         let displayTime = (useTurnoverDisplay) ? remainingTurnoverTime : remainingTime;
+        console.log(`display time: ${displayTime}`);
 
         const minutes = Math.floor(displayTime / 60);
         const seconds = Math.floor(displayTime % 60);

@@ -6,7 +6,6 @@ let previousState = {};
 
 // update ondeck display
 function updateOndeck(data) {
-
     const { ondeck, groups, roundState, betweenRounds, roundSettings, selectRoundFlag } = data;
     const leadMode = roundSettings.leadMode;
 
@@ -80,8 +79,8 @@ function updateMessageDisplay(data) {
     const { betweenRounds, roundStarted, roundSettings } = data;
     const leadMode = roundSettings.leadMode;
     const messageContainer = document.querySelector(".message-container");
-    //lead mode switches green/yellow messages 
 
+    //lead mode switches green/yellow messages 
     if (leadMode) {
         if (betweenRounds) {
             showMessage("Go to Transit Zone:");
@@ -133,7 +132,7 @@ function handleStateUpdate(currentState) {
     }
 
     // check for round turnover
-    if (currentState.betweenRounds !== previousState.betweenRounds) {
+    if ((currentState.betweenRounds !== previousState.betweenRounds) || (currentState.roundStarted !== previousState.roundStarted)) {
         updateMessageDisplay(currentState);
     }
 

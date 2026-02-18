@@ -12,7 +12,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 const ngrok = require("ngrok");
+const rateLimit = require("express-rate-limit");
 const settings = require("./helpers/config");
+const crypto = require("crypto");
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
 const { playSoundFile, stopSoundFile } = require("./helpers/serverSound");
@@ -21,35 +23,60 @@ const createCompetitionHandlers = require("./helpers/competitionHandlers");
 
 //get settings/configs
 const port = settings.port;
-const controlKey = settings.controlKey;
+let controlKey = settings.controlKey;
+const sessionSecret = settings.secretKey;
 const ngrokAuth = settings.ngrok.authtoken;
 const ngrokHost = settings.ngrok.hostname;
 const tunnelAuth = settings.ngrok.tunnelAuth;
 let ngrokUrl = ""; // Store the generated ngrok URL
 
+// check for session and control keys, generate if necessary 
+if (!sessionSecret) { sessionSecret = crypto.randomBytes(32).toString("hex"); }
+if (!controlKey) {
+    controlKey = crypto.randomBytes(4).toString("hex");
+    console.log(`Generated control password: ${controlKey}`);
+}
+
+// rate limiting for control page login
+const controlLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 10,
+});
 // Setup session middleware
 app.use(
     session({
-        secret: "secret_key_here",
+        secret: sessionSecret,
         resave: false,
         saveUninitialized: true,
+        cookie: {
+            maxAge: 16 * 60 * 60 * 1000, // 16 hours
+            secure: process.env.NODE_ENV === "production"
+        }
     })
 );
 
 app.use(express.json());
+app.set("trust proxy", 1);
+app.use("/control", controlLimiter);
 
 // Middleware function to validate access key and create session
-app.post("/control", (req, res) => {
+const controlPath = path.join(__dirname, "./client/control");
+
+// First, POST login to set session
+app.post("/control/login", (req, res) => {
     const { password } = req.body;
-    // if controlKey not set, anyone can access control 
-    if (password === controlKey || (!controlKey && password === "password")) {
+    if (password === controlKey) {
         req.session.authenticated = true;
         req.session.userType = "controller";
-        res.status(200).json({ message: "Access granted" });
-    } else {
-        res.status(401).json({ message: "Unauthorized" });
+        return res.status(200).json({ message: "Access granted" });
     }
+    return res.status(401).json({ message: "Unauthorized" });
 });
+
+// Then, protect all static files
+app.use("/control", sessionAuth("controller"), express.static(controlPath));
+
+
 
 // Override for socket.io
 app.use("/socket.io", express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist")));
@@ -60,8 +87,7 @@ app.use("/transit", express.static(path.join(__dirname, "./client/transit")));
 // info screen handler
 app.use("/info", express.static(path.join(__dirname, "./client/info")));
 
-// Middleware to protect control page
-app.use("/control", sessionAuth("controller"), express.static(path.join(__dirname, "./client/control")));
+
 
 // Home goes to timer
 const timerPath = path.join(__dirname, "./client/timer");
@@ -199,5 +225,13 @@ process.on("SIGINT", async () => {
         console.warn("Ngrok disconnect failed (likely not running):", err.message);
     }
     process.exit(0);
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+    console.error("UNHANDLED REJECTION:", err);
 });
 

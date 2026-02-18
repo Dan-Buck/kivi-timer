@@ -118,7 +118,8 @@ class CompetitionManager {
                     this._advanceRoundState();
                     this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
                 } else {
-                    this._timerUpdateEmit(this.roundSettings.turnover);
+                    this.remainingTurnoverTime = this.roundSettings.turnover;
+                    this._timerUpdateEmit(this.remainingTurnoverTime);
                     this._runTurnoverTimer();
                     // emit ondeck-update here for clients to do their own roundState +1 spoofing
                     this.io.emit("ondeck-update", { betweenRounds: this.betweenRounds, roundName: this.roundName, ondeck: this.ondeck, roundState: (this.roundState), groups: this.groups });
@@ -156,7 +157,6 @@ class CompetitionManager {
 
     _advanceRoundState() {
         this.roundState++;
-        console.log(`roundstate advanced: ${this.roundState}`);
         this.callbacks.onSaveStateToFile(this.roundName, this.roundState, this.remainingTime);
 
         // reset ondeck buckets for each category
@@ -226,7 +226,6 @@ class CompetitionManager {
                 this.io.emit("ondeck-update", { roundName: this.roundName, ondeck: this.ondeck, roundState: this.roundState, groups: this.groups });
                 return;
             }
-            console.log(`advancing ${data.stage} steps`);
             steps = data.stage - 1;
         } else {
             const athleteID = String(data.athleteID);
@@ -254,6 +253,8 @@ class CompetitionManager {
             steps++;
         };
 
+        console.log(`advancing ${steps} steps`);
+
         for (let step = 0; step < steps; step++) {
             this._advanceRoundState();
         }
@@ -268,7 +269,7 @@ class CompetitionManager {
 
     _timerUpdateEmit(time) {
         if (!time) {
-            this.io.emit("timer-update", { remainingTime: this.remainingTime });
+            this.io.emit("timer-update", { remainingTime: this.remainingTime, remainingTurnoverTime: this.remainingTurnoverTime });
             return
         }
 
@@ -361,6 +362,7 @@ class CompetitionManager {
             // go to 5s countdown on first start if not in finals mode
             if (!this.roundSettings.finalsMode && !this.selectRoundFlag) {
                 this.betweenRounds = true;
+                this.io.emit("turnover-begin");
                 this.remainingTurnoverTime = 6;
                 return this._runTurnoverTimer();
             } else {
