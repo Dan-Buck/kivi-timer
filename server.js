@@ -24,7 +24,7 @@ const createCompetitionHandlers = require("./helpers/competitionHandlers");
 //get settings/configs
 const port = settings.port;
 let controlKey = settings.controlKey;
-const sessionSecret = settings.secretKey;
+let sessionSecret = settings.secretKey;
 const ngrokAuth = settings.ngrok.authtoken;
 const ngrokHost = settings.ngrok.hostname;
 const tunnelAuth = settings.ngrok.tunnelAuth;
