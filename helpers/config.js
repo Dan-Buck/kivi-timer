@@ -1,4 +1,5 @@
 module.exports = {
+    env: process.env.NODE_ENV,
     port: process.env.PORT || 5000,
     controlKey: process.env.CONTROL_PASSWORD,
     secretKey: process.env.SECRET_KEY,

@@ -13,8 +13,13 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const ngrok = require("ngrok");
 const rateLimit = require("express-rate-limit");
-const settings = require("./helpers/config");
-const crypto = require("crypto");
+
+const parseCLI = require("./helpers/cli");
+const resolveConfig = require("./helpers/resolveConfig");
+const baseConfig = require("./helpers/config");
+const argv = parseCLI();
+const settings = resolveConfig(baseConfig, argv);
+
 const { saveStateToFile, loadStateFromFile } = require("./helpers/saveState");
 const getLocalIPs = require("./helpers/connections");
 const { playSoundFile, stopSoundFile } = require("./helpers/serverSound");
@@ -22,20 +27,9 @@ const CompetitionManager = require("./server/CompetitionManager");
 const createCompetitionHandlers = require("./helpers/competitionHandlers");
 
 //get settings/configs
-const port = settings.port;
-let controlKey = settings.controlKey;
-let sessionSecret = settings.secretKey;
-const ngrokAuth = settings.ngrok.authtoken;
-const ngrokHost = settings.ngrok.hostname;
-const tunnelAuth = settings.ngrok.tunnelAuth;
+const { port, serverSoundOn, controlKey, sessionSecret, ngrok: ngrokConfig, roundSettings, soundMap } = settings;
+const { authtoken: ngrokAuth, hostname: ngrokHost, enabled: ngrokEnabled, tunnelAuth } = ngrokConfig;
 let ngrokUrl = ""; // Store the generated ngrok URL
-
-// check for session and control keys, generate if necessary 
-if (!sessionSecret) { sessionSecret = crypto.randomBytes(32).toString("hex"); }
-if (!controlKey) {
-    controlKey = crypto.randomBytes(4).toString("hex");
-    console.log(`Generated control password: ${controlKey}`);
-}
 
 // rate limiting for control page login
 const controlLimiter = rateLimit({
@@ -50,7 +44,9 @@ app.use(
         saveUninitialized: true,
         cookie: {
             maxAge: 16 * 60 * 60 * 1000, // 16 hours
-            secure: process.env.NODE_ENV === "production"
+            secure: false, // to allow sending over http for LAN
+            httpOnly: true,
+            sameSite: "lax"
         }
     })
 );
@@ -86,8 +82,6 @@ app.use("/transit", express.static(path.join(__dirname, "./client/transit")));
 
 // info screen handler
 app.use("/info", express.static(path.join(__dirname, "./client/info")));
-
-
 
 // Home goes to timer
 const timerPath = path.join(__dirname, "./client/timer");
@@ -174,6 +168,7 @@ const {
 } = createCompetitionHandlers({
     io,
     baseDir: __dirname,
+    serverSoundOn,
     playSoundFile,
     stopSoundFile,
     fsp,
@@ -183,8 +178,8 @@ const {
 const competition = new CompetitionManager(
     io,
     {
-        roundSettings: settings.roundSettings, // from config.js
-        soundMap: settings.soundMap            // from config.js
+        roundSettings, // from config.js
+        soundMap       // from config.js
     },
     {
         onPlaySound: handlePlaySound,
@@ -197,20 +192,24 @@ const competition = new CompetitionManager(
 try {
     server.listen(port, async () => {
         console.log(`Server is running on http://localhost:${port}`);
-        try {
-            const url = await ngrok.connect({
-                addr: port,
-                authtoken: ngrokAuth,
-                basic_auth: tunnelAuth,
-                region: 'eu',
-                hostname: ngrokHost
-            });
-            console.log(`ngrok tunnel established at ${url}`);
-            ngrokUrl = url;
-        } catch (err) {
-            console.error("NONFATAL - failed to connect to ngrok: ", err.message);
-        }
 
+        if (ngrokEnabled) {
+            try {
+                const url = await ngrok.connect({
+                    addr: port,
+                    authtoken: ngrokAuth,
+                    basic_auth: tunnelAuth,
+                    region: 'eu',
+                    hostname: ngrokHost
+                });
+                console.log(`ngrok tunnel established at ${url}`);
+                ngrokUrl = url;
+            } catch (err) {
+                console.error("NONFATAL - failed to connect to ngrok: ", err.message);
+            }
+        } else {
+            console.log("ngrok disabled");
+        }
     });
 } catch (error) {
     console.error("Failed to start server: ", err.message);
@@ -219,10 +218,12 @@ try {
 process.on("SIGINT", async () => {
     console.log("Shutting down...");
     competition.shutdown();
-    try {
-        await ngrok.disconnect(); // safely ignore if not running
-    } catch (err) {
-        console.warn("Ngrok disconnect failed (likely not running):", err.message);
+    if (ngrokEnabled) {
+        try {
+            await ngrok.disconnect();
+        } catch (err) {
+            console.warn("Ngrok disconnect failed:", err.message);
+        }
     }
     process.exit(0);
 });

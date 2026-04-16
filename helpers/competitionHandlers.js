@@ -3,6 +3,7 @@ const path = require("path");
 function createCompetitionHandlers({
     io,
     baseDir,
+    serverSoundOn,
     playSoundFile,
     stopSoundFile,
     fsp,
@@ -12,8 +13,10 @@ function createCompetitionHandlers({
         if (file === "MUTE") {
             stopSoundFile();
         } else {
-            const localPath = path.join(baseDir, "client", file);
-            playSoundFile(localPath);
+            if (serverSoundOn) {
+                const localPath = path.join(baseDir, "client", file);
+                playSoundFile(localPath);
+            }
             io.emit("play-sound", { path: file });
         }
     };
