@@ -1,5 +1,6 @@
 /node_modules
 .env
+*:[Zz]one.Identifier
 timer.txt
 /misc/*
 !/misc
