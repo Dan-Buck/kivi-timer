@@ -29,35 +29,54 @@ The Kivi Timer Web App is a competition timer system designed for managing climb
 
 3. Create a `.env` file in the project root with the following variables:
    ```env
+   PORT=5000
    NGROK_AUTHTOKEN=your-ngrok-auth-token
    NGROK_HOSTNAME="your-custom-ngrok-subdomain.ngrok-free.app"
    CONTROL_PASSWORD="your-chosen-control-password"
+   NGROK_TUNNEL_AUTH="username:password"
    ```
 
-   `CONTROL_PASSWORD` defaults to "password".  Optionally add authentication to the URL tunnel:
-    ```env
-    NGROK_TUNNEL_AUTH="username:password"
-    ```
-    [Setting up and configuring a free ngrok account](https://ngrok.com/)
-
+   `CONTROL_PASSWORD` is optional. If you do not set it, the app generates a random control password at startup and prints it to the console. `NGROK_TUNNEL_AUTH` is optional and only needed if you want to add basic authentication to the tunnel.
+   [Setting up and configuring a free ngrok account](https://ngrok.com/)
 
 4. Start the server:
+   ```sh
+   npm start
+   ```
+
+   You can also start it directly with Node:
    ```sh
    node server.js
    ```
 
-## Usage
-- The app will start at `http://localhost:5000`unless otherwise specified.  
-- The NGROK tunnel URL is displayed in the console when the server starts (or via the /connections endpoint). Share this with other clients and users who need access without localhost. 
-- Client sockets will automatically preferentially connect to: localhost > LAN > NGROK.
+   Optional command-line flags:
+   ```sh
+   node server.js --port=4000
+   node server.js --ngrok=false
+   node server.js --sound=true
+   node server.js --help
+   ```
+   Supported flags:
+   - `--port=<number>`: change the server port (default: `5000` or `PORT` from the environment)
+   - `--ngrok=<boolean>`: enable or disable ngrok (default: `true`)
+   - `--sound=<boolean>`: enable or disable direct server sound playback (default: `false`)
+   - `--help`: show the available options
 
-### Endpoints
+## Usage
+- The app will start at `http://localhost:5000` unless otherwise specified.
+- The NGROK tunnel URL is displayed in the console when the server starts (or via the `/connections` endpoint). Share this with other clients and users who need access without localhost.
+- Client sockets will automatically preferentially connect to: localhost > LAN > NGROK.
+- Sounds only play after the page has received a user interaction, so click the timer or control screen before expecting audio.
+
+### Main screens
 - The **fullscreen timer** is the homepage `/`. You must interact with the page for sounds to play. Click the timer to open the controls.
-- Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the preset key. No sound on this page.
 - The **transit area** screen can be accessed at `/transit`. This shows which athletes are next up for each boulder. Recommended resolution: 1920x1080.
 - The configurable **general info** screen is at `/info` and shows the timer, stage #, and names of active groups. Interact for sound. Click on the timer to open a layout configuration modal with presets. Choice is saved to localStorage for load on refresh.
+
+### Admin and control pages
+- Access the **control panel** by clicking the timer or navigating to `/control` and logging in with the control password. No sound on this page.
 - View the uploaded **athlete data** at `/athletes`. This page is for verification and not user-facing (yet).
-- The **addresses** for the NGROK URL, localhost port, and LAN IPs are available at `/connections`, returning: json({ ngrokUrl, port, lanIPs })
+- The **addresses** for the NGROK URL, localhost port, and LAN IPs are available at `/connections`, returning: `json({ ngrokUrl, port, lanIPs })`
 
 ### Operational Workflow
 - From the control screen enter your round settings and Round Name (hit "Update").
@@ -81,6 +100,11 @@ This folder contains several files used at runtime that may be useful to you:
 - **server.log** 
 - **state-backup.json** : updated at round turnover. Currently experimental, may be used for manually restoring round state.
 - **timer.txt** : updated at every 1s `timer-update` emit, potentially utilized for connection-free timer rendering.
+
+## Troubleshooting
+- If ngrok fails to connect, confirm that your auth token is valid and that the hostname is available and correctly configured.
+- If sound does not play, make sure you have interacted with the page first and that the required sound player is installed.
+- If clients cannot connect, verify that the correct port is open and that the LAN/localhost addresses are reachable from the client device.
 
 ## Ngrok Setup
 The app can use Ngrok for external access and to provide a redundant connection method when local networks are spotty. You will need to register and configure an account ([free and easy!](https://ngrok.com/)). The tunnel URL is displayed in the console when the server starts, or via the /connections endpoint. Share this with other clients and users who need access. 
